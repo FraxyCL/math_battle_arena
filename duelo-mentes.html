@@ -251,7 +251,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <div class="screen active" id="screen-menu">
   <div class="logo"><span class="b">MATH</span> <span style="color:#fff">BATTLE</span> <span class="r">ARENA</span></div>
   <div class="logo-game">🧠 <span>Duelo de Mentes</span></div>
-  <div class="logo-sub">6 formatos de pregunta · 1 vs 1</div>
+  <div class="logo-sub">7 formatos de pregunta · 1 vs 1</div>
   <div class="menu-btns">
     <button class="btn btn-primary" id="btn-play">▶ &nbsp;INICIAR PARTIDA</button>
     <button class="btn btn-ghost"   id="btn-config">⚙ &nbsp;CONFIGURACIÓN</button>
@@ -730,8 +730,16 @@ function submitNP(side,q){
   if(!STATE.active||!STATE[side].ans||STATE[side].ans==='-')return;
   const ok=parseInt(STATE[side].ans,10)===q.ans;
   feedback(side,ok);
-  if(ok) advance(side);
-  else{STATE[side].ans='';const el=document.getElementById('av-'+side);if(el)el.textContent='';}
+  if(ok){
+    advance(side);
+  } else {
+    // Wrong numpad answer: clear field and unlock so player can retry
+    STATE[side].ans='';
+    const el=document.getElementById('av-'+side);
+    if(el) el.textContent='';
+    // Small delay so the flash animation is visible, then unlock
+    setTimeout(()=>unlockPanel(side), 420);
+  }
 }
 
 function renderTF(az,side,q){
