@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Circuito Matemático — Math Battle Arena</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
+
+:root {
+  --cyan:      #00ffdd;
+  --cyan-dark: #00bbaa;
+  --cyan-glow: rgba(0,255,221,0.4);
+  --amber:     #ffaa00;
+  --amber-dark:#cc7700;
+  --amber-glow:rgba(255,170,0,0.4);
+  --green:     #00ff66;
+  --green-glow:rgba(0,255,100,0.35);
+  --red:       #ff3355;
+  --red-glow:  rgba(255,51,85,0.4);
+  --gold:      #ffd700;
+  --bg:        #060a10;
+  --bg2:       #0c1218;
+  --bg3:       #111a22;
+  --bg4:       #162030;
+  --text:      #e0f0ff;
+  --text-dim:  #5a7a99;
+  --border:    rgba(0,200,255,0.1);
+  --fd: 'Orbitron', monospace;
+  --fb: 'Rajdhani', sans-serif;
+}
+
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html, body {
+  width:100%; height:100%; overflow:hidden;
+  background:var(--bg); color:var(--text);
+  font-family:var(--fb);
+  touch-action:none;
+  user-select:none; -webkit-user-select:none;
+}
+
+/* ── Fondo laboratorio futurista ── */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(0,180,255,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(0,255,180,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(0,100,200,0.08) 0%, transparent 50%);
+}
+body::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(rgba(0,200,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,200,255,0.03) 1px, transparent 1px);
+  background-size:40px 40px;
+}
+
+/* ════ PANTALLAS ════ */
+.screen {
+  position:fixed; inset:0; z-index:1;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  opacity:0; pointer-events:none;
+  transition:opacity 0.4s ease;
+}
+.screen.active { opacity:1; pointer-events:all; }
+
+/* ════ MENÚ ════ */
+#screen-menu {
+  gap:8px;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(0,200,255,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 60%, rgba(0,255,170,0.07) 0%, transparent 55%);
+}
+.logo { font-family:var(--fd); font-weight:900; font-size:clamp(22px,4vw,56px); text-align:center; line-height:1; letter-spacing:0.04em; }
+.logo .c { color:var(--cyan); text-shadow:0 0 30px var(--cyan-glow); }
+.logo .a { color:var(--amber); text-shadow:0 0 30px var(--amber-glow); }
+.logo-game { font-family:var(--fd); font-size:clamp(11px,1.5vw,18px); font-weight:700; letter-spacing:0.2em; color:var(--text-dim); text-align:center; margin-top:4px; }
+.logo-game span { color:var(--cyan); }
+.logo-sub { font-size:clamp(10px,1.1vw,13px); letter-spacing:0.3em; color:var(--text-dim); text-align:center; text-transform:uppercase; margin-top:2px; }
+.coop-badge {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 16px; border-radius:20px; margin-top:6px;
+  background:rgba(0,255,170,0.08); border:1px solid rgba(0,255,170,0.25);
+  font-family:var(--fd); font-size:10px; letter-spacing:0.2em; color:var(--green);
+}
+.menu-btns { display:flex; flex-direction:column; gap:10px; width:min(420px,90vw); margin-top:28px; }
+.btn {
+  height:76px; border:none; cursor:pointer;
+  font-family:var(--fd); font-size:clamp(13px,1.8vw,18px);
+  font-weight:700; letter-spacing:0.08em; border-radius:10px;
+  transition:all .18s ease; position:relative; overflow:hidden;
+  touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+}
+.btn::after { content:''; position:absolute; inset:0; background:rgba(255,255,255,0); transition:background .12s; }
+.btn:active::after { background:rgba(255,255,255,0.1); }
+.btn-cyan { background:linear-gradient(135deg,var(--cyan-dark),var(--cyan)); color:#001a15; box-shadow:0 0 24px var(--cyan-glow),0 4px 16px rgba(0,0,0,0.5); }
+.btn-cyan:hover { transform:translateY(-2px); box-shadow:0 0 40px var(--cyan-glow),0 8px 24px rgba(0,0,0,0.5); }
+.btn-ghost { background:var(--bg3); color:var(--text-dim); border:1px solid var(--border); }
+.btn-ghost:hover { border-color:rgba(0,200,255,0.3); color:var(--text); }
+.btn-sm { height:50px!important; font-size:12px!important; border-radius:8px; }
+.btn-back { display:flex;align-items:center;justify-content:center;gap:8px;height:42px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:var(--fd);font-size:10px;letter-spacing:0.15em;cursor:pointer;transition:all .15s;text-decoration:none;margin-top:6px; }
+.btn-back:hover { border-color:rgba(0,200,255,0.3); color:var(--text); }
+
+/* ════ CONFIG ════ */
+#screen-config { padding:16px; overflow-y:auto; justify-content:flex-start; padding-top:24px; }
+.cfg-title { font-family:var(--fd); font-size:clamp(15px,2vw,24px); font-weight:700; color:var(--cyan); text-align:center; letter-spacing:0.1em; margin-bottom:18px; text-shadow:0 0 16px var(--cyan-glow); }
+.cfg-panel { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:20px 22px; width:min(640px,96vw); display:flex; flex-direction:column; gap:20px; }
+.cfg-lbl { font-family:var(--fd); font-size:10px; letter-spacing:0.2em; color:var(--text-dim); text-transform:uppercase; margin-bottom:8px; display:block; }
+.level-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.level-btn {
+  padding:14px 8px; border-radius:9px; border:2px solid var(--border);
+  background:var(--bg3); color:var(--text-dim);
+  font-family:var(--fd); font-size:11px; font-weight:700; line-height:1.6;
+  cursor:pointer; transition:all .18s; touch-action:manipulation;
+}
+.level-btn:hover { border-color:var(--cyan); color:var(--cyan); }
+.level-btn.sel { background:rgba(0,255,221,0.08); border-color:var(--cyan); color:var(--cyan); box-shadow:0 0 14px rgba(0,255,221,0.15); }
+.level-btn .lv-icon { font-size:18px; display:block; margin-bottom:4px; }
+.cfg-footer { display:flex; flex-direction:column; gap:10px; width:min(640px,96vw); margin-top:12px; }
+
+/* ════ CUENTA REGRESIVA ════ */
+#screen-countdown {
+  background:radial-gradient(ellipse at center, rgba(0,200,255,0.08) 0%, transparent 60%);
+}
+.cd-number { font-family:var(--fd); font-size:clamp(130px,22vw,260px); font-weight:900; line-height:1; animation:cd-pop .85s cubic-bezier(.22,1,.36,1) both; }
+.cd-go { font-family:var(--fd); font-size:clamp(60px,14vw,160px); font-weight:900; color:var(--cyan); text-shadow:0 0 50px var(--cyan-glow); animation:cd-pop .6s cubic-bezier(.22,1,.36,1) both; display:none; }
+.cd-label { font-family:var(--fd); font-size:clamp(12px,1.8vw,20px); letter-spacing:0.35em; color:var(--text-dim); text-transform:uppercase; margin-top:10px; animation:cd-fade .85s ease both; }
+.cd-hint { position:absolute; bottom:12vh; font-family:var(--fd); font-size:11px; letter-spacing:0.2em; color:var(--text-dim); text-align:center; padding:0 20px; }
+.cd-hint span { color:var(--cyan); }
+@keyframes cd-pop { 0%{opacity:0;transform:scale(1.8)} 40%{opacity:1;transform:scale(.92)} 70%{transform:scale(1.05)} 100%{opacity:1;transform:scale(1)} }
+@keyframes cd-fade { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+/* ════ JUEGO ════ */
+#screen-game { flex-direction:column; align-items:stretch; padding:0; }
+
+.game-shell {
+  width:100vw; height:100vh;
+  display:grid;
+  grid-template-rows: 52px 1fr 64px;
+  grid-template-columns: 1fr 90px 1fr;
+  overflow:hidden;
+}
+
+/* Topbar */
+.g-topbar {
+  grid-column:1/-1;
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--bg2); border-bottom:1px solid var(--border);
+  padding:0 14px; gap:10px;
+}
+.g-topbar-info { display:flex; align-items:center; gap:12px; }
+.g-topbar-title { font-family:var(--fd); font-size:9px; letter-spacing:0.2em; color:var(--text-dim); }
+.g-topbar-game { font-family:var(--fd); font-size:9px; letter-spacing:0.15em; color:var(--cyan); }
+.g-topbar-btns { display:flex; gap:6px; }
+.g-btn { height:30px; padding:0 10px; background:transparent; border:1px solid var(--border); border-radius:6px; color:var(--text-dim); font-family:var(--fd); font-size:9px; letter-spacing:0.1em; cursor:pointer; transition:all .15s; touch-action:manipulation; text-decoration:none; display:flex; align-items:center; }
+.g-btn:hover { border-color:rgba(0,200,255,0.3); color:var(--text); }
+
+/* Paneles laterales */
+.panel-left, .panel-right {
+  display:flex; flex-direction:column;
+  padding:10px 8px; gap:8px; overflow:hidden;
+  position:relative;
+}
+.panel-left {
+  background:linear-gradient(170deg, rgba(0,120,200,0.06) 0%, transparent 60%);
+  border-right:1px solid var(--border);
+}
+.panel-right {
+  background:linear-gradient(190deg, rgba(0,200,150,0.06) 0%, transparent 60%);
+  border-left:1px solid var(--border);
+}
+
+/* Cabecera de panel */
+.panel-header { display:flex; align-items:center; gap:8px; flex-shrink:0; padding-bottom:8px; border-bottom:1px solid var(--border); }
+.panel-avatar {
+  width:32px; height:32px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--fd); font-size:11px; font-weight:900; flex-shrink:0;
+}
+.panel-left .panel-avatar { background:rgba(0,150,255,0.2); border:2px solid rgba(0,150,255,0.4); color:#60c0ff; box-shadow:0 0 10px rgba(0,150,255,0.2); }
+.panel-right .panel-avatar { background:rgba(0,220,150,0.2); border:2px solid rgba(0,220,150,0.4); color:#40ffcc; box-shadow:0 0 10px rgba(0,220,150,0.2); }
+.panel-title { font-family:var(--fd); font-size:clamp(9px,0.9vw,12px); font-weight:700; letter-spacing:0.1em; }
+.panel-left .panel-title { color:#60c0ff; }
+.panel-right .panel-title { color:#40ffcc; }
+.panel-role { font-family:var(--fd); font-size:9px; color:var(--text-dim); letter-spacing:0.1em; }
+
+/* Instrucción */
+.panel-instr {
+  flex-shrink:0;
+  font-family:var(--fd); font-size:9px; letter-spacing:0.15em;
+  color:var(--text-dim); text-align:center; text-transform:uppercase;
+  padding:5px 8px; border-radius:6px;
+  background:rgba(255,255,255,0.02); border:1px solid var(--border);
+}
+
+/* Nodos de conexión */
+.nodes-list { flex:1; display:flex; flex-direction:column; gap:6px; min-height:0; overflow:hidden; }
+
+.node {
+  flex:1; min-height:0;
+  border-radius:10px; border:2px solid var(--border);
+  background:var(--bg3);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--fd); font-weight:700;
+  font-size:clamp(11px,1.3vw,17px); letter-spacing:0.03em;
+  text-align:center; padding:6px 10px; line-height:1.3;
+  position:relative; transition:all .2s; cursor:pointer;
+  touch-action:none; -webkit-tap-highlight-color:transparent;
+  color:var(--text);
+}
+.panel-left .node { border-right:4px solid rgba(0,150,255,0.2); }
+.panel-right .node { border-left:4px solid rgba(0,220,150,0.2); }
+
+.node.selecting {
+  border-color:var(--cyan);
+  background:rgba(0,255,221,0.08);
+  box-shadow:0 0 20px rgba(0,255,221,0.25);
+  transform:scale(1.02);
+}
+.node.matched {
+  border-color:var(--green)!important;
+  background:rgba(0,255,100,0.07)!important;
+  color:var(--green); opacity:0.6;
+  pointer-events:none;
+}
+.node.matched::after {
+  content:'✓'; position:absolute; top:4px; right:6px;
+  font-size:11px; color:var(--green);
+}
+.node.wrong-flash {
+  border-color:var(--red)!important;
+  background:rgba(255,51,85,0.12)!important;
+  animation:node-wrong .4s ease;
+}
+.node.distractor { opacity:0.85; }
+.node-idx {
+  position:absolute; top:4px; left:6px;
+  font-size:8px; opacity:0.35; letter-spacing:0.1em;
+}
+.panel-left .node-idx { color:#60c0ff; }
+.panel-right .node-idx { color:#40ffcc; }
+
+/* ── COLUMNA CENTRAL ── */
+.g-center {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:space-between;
+  background:var(--bg2);
+  padding:8px 4px; gap:6px; overflow:hidden;
+}
+
+/* Barra de energía vertical */
+.energy-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; min-height:0; width:100%; }
+.energy-label { font-family:var(--fd); font-size:8px; letter-spacing:0.15em; color:var(--text-dim); text-align:center; }
+.energy-track {
+  flex:1; width:32px; min-height:0;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--border); border-radius:16px;
+  overflow:hidden; position:relative;
+  display:flex; flex-direction:column; justify-content:flex-end;
+}
+.energy-fill {
+  width:100%; border-radius:16px;
+  transition:height .6s cubic-bezier(.25,1,.5,1);
+  background:linear-gradient(0deg, var(--cyan-dark), var(--cyan), #aaffee);
+  box-shadow:0 0 12px var(--cyan-glow);
+  position:relative;
+}
+.energy-fill::after {
+  content:''; position:absolute; top:0; left:0; right:0;
+  height:3px; background:rgba(255,255,255,0.6); border-radius:16px;
+}
+.energy-fill.danger { background:linear-gradient(0deg,#cc0022,var(--red),#ff8899); box-shadow:0 0 12px var(--red-glow); }
+.energy-val { font-family:var(--fd); font-size:clamp(12px,1.3vw,17px); font-weight:900; color:var(--cyan); text-align:center; text-shadow:0 0 10px var(--cyan-glow); }
+.energy-goal { font-family:var(--fd); font-size:8px; color:var(--text-dim); text-align:center; }
+
+/* Marcador rondas */
+.round-info { font-family:var(--fd); font-size:8px; letter-spacing:0.15em; color:var(--text-dim); text-align:center; }
+.connections-dots { display:flex; gap:3px; flex-wrap:wrap; justify-content:center; }
+.conn-dot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); transition:all .3s; }
+.conn-dot.done { background:var(--green); border-color:var(--green); box-shadow:0 0 6px var(--green-glow); }
+.conn-dot.active { background:var(--cyan); border-color:var(--cyan); box-shadow:0 0 6px var(--cyan-glow); animation:pulse-dot 1s ease-in-out infinite; }
+
+/* Indicador de sincronía */
+.sync-indicator {
+  width:100%; padding:6px 4px;
+  border-radius:8px; border:1px solid var(--border);
+  background:var(--bg3); text-align:center;
+  flex-shrink:0;
+}
+.sync-label { font-family:var(--fd); font-size:8px; letter-spacing:0.12em; color:var(--text-dim); margin-bottom:4px; }
+.sync-dots { display:flex; gap:4px; justify-content:center; }
+.sync-dot { width:10px; height:10px; border-radius:50%; border:1px solid var(--border); background:transparent; transition:all .2s; }
+.sync-dot.a-active { background:rgba(0,150,255,0.6); border-color:#60c0ff; box-shadow:0 0 6px rgba(0,150,255,0.4); }
+.sync-dot.b-active { background:rgba(0,220,150,0.6); border-color:#40ffcc; box-shadow:0 0 6px rgba(0,220,150,0.4); }
+.sync-dot.both { background:var(--cyan); border-color:var(--cyan); box-shadow:0 0 8px var(--cyan-glow); animation:pulse-dot .4s ease; }
+
+/* ── BARRA INFERIOR — poderes especiales ── */
+.powers-bar {
+  grid-column:1/-1;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  padding:0 12px;
+  background:var(--bg2); border-top:1px solid var(--border);
+}
+.power-btn {
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:6px 10px; border-radius:8px;
+  border:1px solid var(--border); background:var(--bg3);
+  cursor:pointer; transition:all .18s; touch-action:manipulation;
+  flex:1; max-width:110px;
+}
+.power-btn:hover:not(:disabled) { border-color:var(--amber); background:rgba(255,170,0,0.06); }
+.power-btn:active:not(:disabled) { transform:scale(0.96); }
+.power-btn:disabled { opacity:0.25; cursor:not-allowed; }
+.power-btn.used { opacity:0.2; cursor:not-allowed; }
+.power-icon { font-size:18px; }
+.power-name { font-family:var(--fd); font-size:8px; letter-spacing:0.08em; color:var(--amber); }
+.power-desc { font-size:9px; color:var(--text-dim); }
+.power-uses { font-family:var(--fd); font-size:8px; color:var(--text-dim); }
+
+/* ── CANVAS de cables ── */
+#cable-canvas {
+  position:fixed; inset:0; z-index:2;
+  pointer-events:none;
+}
+
+/* ── OVERLAY de feedback ── */
+.feedback-overlay {
+  position:fixed; inset:0; z-index:20;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:14px;
+  opacity:0; pointer-events:none;
+  transition:opacity .3s;
+}
+.feedback-overlay.show { opacity:1; pointer-events:all; }
+.feedback-box {
+  background:var(--bg2); border-radius:14px;
+  padding:24px 32px; width:min(480px,90vw);
+  border:2px solid; text-align:center;
+  box-shadow:0 0 40px rgba(0,0,0,0.6);
+}
+.feedback-box.ok { border-color:var(--green); box-shadow:0 0 40px var(--green-glow),0 0 80px rgba(0,0,0,0.6); }
+.feedback-box.fail { border-color:var(--red); box-shadow:0 0 40px var(--red-glow),0 0 80px rgba(0,0,0,0.6); }
+.fb-icon { font-size:clamp(40px,6vw,64px); }
+.fb-title { font-family:var(--fd); font-size:clamp(14px,2vw,22px); font-weight:700; letter-spacing:0.1em; margin-top:6px; }
+.feedback-box.ok .fb-title { color:var(--green); }
+.feedback-box.fail .fb-title { color:var(--red); }
+.fb-explain { font-size:clamp(13px,1.5vw,17px); color:var(--text); margin-top:10px; line-height:1.5; }
+.fb-energy { font-family:var(--fd); font-size:clamp(20px,3vw,32px); font-weight:900; margin-top:8px; }
+.feedback-box.ok .fb-energy { color:var(--cyan); }
+.feedback-box.fail .fb-energy { color:var(--red); }
+.fb-continue { font-family:var(--fd); font-size:10px; letter-spacing:0.2em; color:var(--text-dim); margin-top:12px; animation:blink-slow 1.4s ease-in-out infinite; }
+
+/* ── CORTOCIRCUITO ── */
+.short-circuit {
+  position:fixed; inset:0; z-index:15; pointer-events:none;
+  opacity:0; background:rgba(255,30,50,0.15);
+  animation:none;
+}
+.short-circuit.zap { animation:zap-anim .5s ease forwards; }
+
+/* ── VICTORIA ── */
+#screen-victory { flex-direction:column; gap:16px; }
+.vic-glow-c { position:absolute; inset:0; background:radial-gradient(ellipse at center, rgba(0,255,221,0.12) 0%, transparent 65%); pointer-events:none; }
+.vic-lbl { font-family:var(--fd); font-size:clamp(10px,1.4vw,14px); letter-spacing:0.4em; color:var(--text-dim); }
+.vic-title { font-family:var(--fd); font-size:clamp(36px,8vw,90px); font-weight:900; color:var(--cyan); text-shadow:0 0 40px var(--cyan-glow); line-height:1; }
+.vic-sub { font-size:clamp(14px,2vw,20px); color:var(--text-dim); text-align:center; }
+.vic-stats-grid {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
+  width:min(500px,90vw);
+}
+.vic-stat { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center; }
+.vic-stat-val { font-family:var(--fd); font-size:clamp(18px,2.5vw,28px); font-weight:900; color:var(--cyan); }
+.vic-stat-lbl { font-family:var(--fd); font-size:9px; letter-spacing:0.15em; color:var(--text-dim); margin-top:2px; }
+.summary-box { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:16px 20px; width:min(520px,92vw); max-height:28vh; overflow-y:auto; }
+.summary-title { font-family:var(--fd); font-size:10px; letter-spacing:0.2em; color:var(--cyan); margin-bottom:10px; }
+.summary-item { display:flex; gap:10px; margin-bottom:8px; font-size:13px; line-height:1.4; }
+.summary-item .si-pair { font-family:var(--fd); font-size:10px; color:var(--amber); flex-shrink:0; }
+.vic-btns { display:flex; flex-direction:column; gap:8px; width:min(280px,90vw); }
+
+/* ── PODER PISTA ── */
+.hint-box {
+  position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+  z-index:18; background:var(--bg2); border:1px solid var(--amber);
+  border-radius:10px; padding:12px 20px;
+  font-family:var(--fd); font-size:11px; letter-spacing:0.1em;
+  color:var(--amber); text-align:center; box-shadow:0 0 20px var(--amber-glow);
+  animation:hint-in .3s ease;
+  max-width:min(400px,90vw);
+}
+@keyframes hint-in { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+/* ── ANIMACIONES ── */
+@keyframes blink-slow { 0%,100%{opacity:0.4} 50%{opacity:1} }
+@keyframes pulse-dot  { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
+@keyframes node-wrong { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 60%{transform:translateX(5px)} }
+@keyframes zap-anim   { 0%{opacity:1} 20%{opacity:0.8} 40%{opacity:0.4} 60%{opacity:0.7} 100%{opacity:0} }
+@keyframes cable-glow { 0%{opacity:0.3} 100%{opacity:1} }
+</style>
+</head>
+<body>
+
+<!-- Canvas de cables (encima de todo excepto overlays) -->
+<canvas id="cable-canvas"></canvas>
+
+<!-- Cortocircuito flash -->
+<div class="short-circuit" id="short-circuit"></div>
+
+<!-- ════ MENÚ ════ -->
+<div class="screen active" id="screen-menu">
+  <div class="logo">
+    <span class="c">CIRCUITO</span> <span class="a">MATEMÁTICO</span>
+  </div>
+  <div class="logo-game">⚡ <span>Math Battle Arena</span> · Modo Cooperativo</div>
+  <div class="logo-sub">Conecta · Coordina · Activa</div>
+  <div class="coop-badge">🤝 DOS JUGADORES · MISMO EQUIPO</div>
+  <div class="menu-btns">
+    <button class="btn btn-cyan" id="btn-play">⚡ &nbsp;ACTIVAR CIRCUITO</button>
+    <button class="btn btn-ghost" id="btn-config">⚙ &nbsp;CONFIGURACIÓN</button>
+    <a class="btn-back" href="../index.html">← Volver al Hub de Juegos</a>
+  </div>
+</div>
+
+<!-- ════ CUENTA REGRESIVA ════ -->
+<div class="screen" id="screen-countdown">
+  <div class="cd-number" id="cd-number">3</div>
+  <div class="cd-go"     id="cd-go">¡CONECTEN!</div>
+  <div class="cd-label"  id="cd-label">INICIALIZANDO CIRCUITO</div>
+  <div class="cd-hint">
+    <span>J. IZQUIERDO</span> toca una Fuente &nbsp;·&nbsp; <span>J. DERECHO</span> toca el Dispositivo que le corresponde<br>
+    ¡Deben elegir al mismo tiempo!
+  </div>
+</div>
+
+<!-- ════ CONFIG ════ -->
+<div class="screen" id="screen-config">
+  <div class="cfg-title">⚙ CONFIGURACIÓN DEL CIRCUITO</div>
+  <div class="cfg-panel">
+    <div>
+      <label class="cfg-lbl">⚡ Nivel de dificultad</label>
+      <div class="level-grid">
+        <button class="level-btn sel" data-level="easy">
+          <span class="lv-icon">🔋</span>
+          FÁCIL<br><span style="font-size:9px;opacity:.6">3 conexiones</span>
+        </button>
+        <button class="level-btn" data-level="medium">
+          <span class="lv-icon">⚡</span>
+          INTERMEDIO<br><span style="font-size:9px;opacity:.6">5 conexiones</span>
+        </button>
+        <button class="level-btn" data-level="hard">
+          <span class="lv-icon">🌩</span>
+          AVANZADO<br><span style="font-size:9px;opacity:.6">7 con distractores</span>
+        </button>
+      </div>
+    </div>
+    <div>
+      <label class="cfg-lbl">📚 Tema de conexiones</label>
+      <div class="level-grid" id="theme-grid">
+        <button class="level-btn sel" data-theme="operations">
+          <span class="lv-icon">🔢</span>
+          OPERACIONES<br><span style="font-size:9px;opacity:.6">expresiones</span>
+        </button>
+        <button class="level-btn" data-theme="fractions">
+          <span class="lv-icon">½</span>
+          FRACCIONES<br><span style="font-size:9px;opacity:.6">equivalencias</span>
+        </button>
+        <button class="level-btn" data-theme="geometry">
+          <span class="lv-icon">📐</span>
+          GEOMETRÍA<br><span style="font-size:9px;opacity:.6">fórmulas</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="cfg-footer">
+    <button class="btn btn-cyan" id="cfg-play">⚡ &nbsp;INICIAR</button>
+    <button class="btn btn-ghost btn-sm" id="cfg-back">← VOLVER</button>
+  </div>
+</div>
+
+<!-- ════ JUEGO ════ -->
+<div class="screen" id="screen-game">
+  <div class="game-shell">
+
+    <!-- Topbar -->
+    <div class="g-topbar">
+      <div class="g-topbar-info">
+        <div class="g-topbar-title">MATH BATTLE ARENA</div>
+        <div style="color:var(--border)">·</div>
+        <div class="g-topbar-game">⚡ Circuito Matemático</div>
+      </div>
+      <div style="font-family:var(--fd);font-size:9px;letter-spacing:0.15em;color:var(--text-dim)" id="level-badge">FÁCIL · 3 CONEXIONES</div>
+      <div class="g-topbar-btns">
+        <button class="g-btn" id="g-menu-btn">↩ MENÚ</button>
+        <a class="g-btn" href="../index.html">⊞ HUB</a>
+      </div>
+    </div>
+
+    <!-- Panel izquierdo: Fuentes -->
+    <div class="panel-left" id="panel-left">
+      <div class="panel-header">
+        <div class="panel-avatar">J1</div>
+        <div>
+          <div class="panel-title">FUENTES DE ENERGÍA</div>
+          <div class="panel-role">Jugador Izquierdo</div>
+        </div>
+      </div>
+      <div class="panel-instr" id="instr-left">Toca una fuente para seleccionarla</div>
+      <div class="nodes-list" id="nodes-left"></div>
+    </div>
+
+    <!-- Centro: energía + sincronía -->
+    <div class="g-center">
+      <div class="energy-label">ENERGÍA</div>
+      <div class="energy-wrap">
+        <div class="energy-track">
+          <div class="energy-fill" id="energy-fill" style="height:0%"></div>
+        </div>
+      </div>
+      <div class="energy-val" id="energy-val">0</div>
+      <div class="energy-goal">/ 100</div>
+
+      <div style="width:80%;height:1px;background:var(--border);margin:4px 0"></div>
+
+      <div class="sync-indicator">
+        <div class="sync-label">SINCRONÍA</div>
+        <div class="sync-dots" id="sync-dots">
+          <div class="sync-dot" id="sd-a"></div>
+          <div class="sync-dot" id="sd-b"></div>
+        </div>
+      </div>
+
+      <div style="width:80%;height:1px;background:var(--border);margin:4px 0"></div>
+
+      <div class="round-info" id="round-info">CONEXIÓN 1/3</div>
+      <div class="connections-dots" id="conn-dots"></div>
+    </div>
+
+    <!-- Panel derecho: Dispositivos -->
+    <div class="panel-right" id="panel-right">
+      <div class="panel-header">
+        <div class="panel-avatar">J2</div>
+        <div>
+          <div class="panel-title">DISPOSITIVOS</div>
+          <div class="panel-role">Jugador Derecho</div>
+        </div>
+      </div>
+      <div class="panel-instr" id="instr-right">Toca el dispositivo correspondiente</div>
+      <div class="nodes-list" id="nodes-right"></div>
+    </div>
+
+    <!-- Barra de poderes -->
+    <div class="powers-bar">
+      <button class="power-btn" id="pow-reset" title="Reinicia la selección actual">
+        <span class="power-icon">🔄</span>
+        <span class="power-name">REINICIAR</span>
+        <span class="power-desc">Limpia selección</span>
+        <span class="power-uses" id="pu-reset">1 uso</span>
+      </button>
+      <button class="power-btn" id="pow-diag" title="Revela qué tipo de par buscar">
+        <span class="power-icon">🔍</span>
+        <span class="power-name">DIAGNÓSTICO</span>
+        <span class="power-desc">Muestra categoría</span>
+        <span class="power-uses" id="pu-diag">1 uso</span>
+      </button>
+      <button class="power-btn" id="pow-over" title="Suma +15 energía de emergencia">
+        <span class="power-icon">⚡</span>
+        <span class="power-name">SOBRECARGA</span>
+        <span class="power-desc">+15 energía</span>
+        <span class="power-uses" id="pu-over">1 uso</span>
+      </button>
+      <button class="power-btn" id="pow-hint" title="Pista conceptual sobre la conexión">
+        <span class="power-icon">💡</span>
+        <span class="power-name">PISTA</span>
+        <span class="power-desc">Concepto clave</span>
+        <span class="power-uses" id="pu-hint">1 uso</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════ FEEDBACK OVERLAY ════ -->
+<div class="feedback-overlay" id="feedback-overlay">
+  <div class="feedback-box" id="feedback-box">
+    <div class="fb-icon" id="fb-icon">✅</div>
+    <div class="fb-title" id="fb-title">¡CONEXIÓN EXITOSA!</div>
+    <div class="fb-explain" id="fb-explain"></div>
+    <div class="fb-energy" id="fb-energy">+20 ⚡</div>
+    <div class="fb-continue">Toca cualquier lugar para continuar</div>
+  </div>
+</div>
+
+<!-- ════ VICTORIA ════ -->
+<div class="screen" id="screen-victory">
+  <div class="vic-glow-c"></div>
+  <div class="vic-lbl">🏆 CIRCUITO COMPLETADO</div>
+  <div class="vic-title">¡ÉXITO!</div>
+  <div class="vic-sub" id="vic-sub">El equipo activó el circuito completo</div>
+  <div class="vic-stats-grid" id="vic-stats"></div>
+  <div class="summary-box">
+    <div class="summary-title">📋 RESUMEN DE CONEXIONES</div>
+    <div id="summary-list"></div>
+  </div>
+  <div class="vic-btns">
+    <button class="btn btn-cyan" id="vic-replay">↺ &nbsp;NUEVO CIRCUITO</button>
+    <button class="btn btn-ghost btn-sm" id="vic-menu">↩ MENÚ</button>
+    <a class="btn-back" href="../index.html">⊞ Hub de Juegos</a>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   CIRCUITO MATEMÁTICO — Motor principal
+   Estructura:
+   - DATA: base de datos de conexiones por tema
+   - STATE: estado del juego
+   - RENDER: funciones de dibujo/DOM
+   - LOGIC: lógica del juego
+   - POWERS: poderes especiales
+   - UI: actualizaciones de interfaz
+   - CABLE: animación de cables en canvas
+══════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════
+   DATA — Base de conexiones embebida
+   Formato: { id, left, right, explanation, category }
+   Edita estas secciones para personalizar el contenido.
+════════════════════════════════════════════ */
+const DATA = {
+  operations: [
+    { id:'op1',  left:'2³',           right:'8',              explanation:'2³ = 2×2×2 = 8', category:'Potencias' },
+    { id:'op2',  left:'√144',         right:'12',             explanation:'La raíz cuadrada de 144 es 12 porque 12² = 144', category:'Raíces' },
+    { id:'op3',  left:'15% de 200',   right:'30',             explanation:'15% × 200 = 0.15 × 200 = 30', category:'Porcentajes' },
+    { id:'op4',  left:'4! (factorial)',right:'24',             explanation:'4! = 4×3×2×1 = 24', category:'Factorial' },
+    { id:'op5',  left:'(-3)²',        right:'9',              explanation:'(-3)² = (-3)×(-3) = 9. Negativo al cuadrado es positivo', category:'Potencias' },
+    { id:'op6',  left:'∛27',          right:'3',              explanation:'La raíz cúbica de 27 es 3 porque 3³ = 27', category:'Raíces' },
+    { id:'op7',  left:'25% de 80',    right:'20',             explanation:'25% × 80 = 0.25 × 80 = 20', category:'Porcentajes' },
+    { id:'op8',  left:'5² − 4²',      right:'9',              explanation:'25 − 16 = 9. Diferencia de cuadrados', category:'Álgebra' },
+    { id:'op9',  left:'3 × (4+2)',    right:'18',             explanation:'Se resuelve el paréntesis primero: 3×6 = 18', category:'Orden de operaciones' },
+    { id:'op10', left:'100 ÷ 0.5',    right:'200',            explanation:'Dividir por 0.5 es lo mismo que multiplicar por 2', category:'División' },
+  ],
+  fractions: [
+    { id:'fr1',  left:'1/2',          right:'0.5',            explanation:'1÷2 = 0.5. La fracción un medio equivale a cinco décimas', category:'Fracción-Decimal' },
+    { id:'fr2',  left:'3/4',          right:'75%',            explanation:'3÷4 = 0.75 = 75%', category:'Fracción-Porcentaje' },
+    { id:'fr3',  left:'2/5',          right:'4/10',           explanation:'2/5 = 4/10. Multiplicamos numerador y denominador por 2', category:'Fracciones Equivalentes' },
+    { id:'fr4',  left:'1/3 + 1/6',   right:'1/2',            explanation:'1/3 = 2/6, entonces 2/6 + 1/6 = 3/6 = 1/2', category:'Suma de fracciones' },
+    { id:'fr5',  left:'3/4 × 2/3',   right:'1/2',            explanation:'(3×2)/(4×3) = 6/12 = 1/2. Se simplifica', category:'Multiplicación' },
+    { id:'fr6',  left:'5/8',          right:'0.625',          explanation:'5÷8 = 0.625', category:'Fracción-Decimal' },
+    { id:'fr7',  left:'2/3 ÷ 4/3',   right:'1/2',            explanation:'Dividir es multiplicar por el recíproco: 2/3 × 3/4 = 6/12 = 1/2', category:'División de fracciones' },
+    { id:'fr8',  left:'7/4',          right:'1¾',             explanation:'7/4 = 4/4 + 3/4 = 1 entero con 3 cuartos', category:'Fracción Mixta' },
+    { id:'fr9',  left:'1/4 + 3/8',   right:'5/8',            explanation:'1/4 = 2/8, entonces 2/8 + 3/8 = 5/8', category:'Suma de fracciones' },
+    { id:'fr10', left:'0.3',          right:'3/10',           explanation:'0.3 = tres décimas = 3/10', category:'Decimal-Fracción' },
+  ],
+  geometry: [
+    { id:'ge1',  left:'Área del cuadrado',   right:'l²',                explanation:'El área de un cuadrado es el lado al cuadrado: A = l × l = l²', category:'Áreas' },
+    { id:'ge2',  left:'Área del triángulo',  right:'(b × h) / 2',       explanation:'A = base × altura dividido en 2', category:'Áreas' },
+    { id:'ge3',  left:'Perímetro del círculo',right:'2πr',              explanation:'La circunferencia (perímetro) del círculo es 2 × π × radio', category:'Círculo' },
+    { id:'ge4',  left:'Área del círculo',    right:'πr²',               explanation:'A = π × radio²', category:'Círculo' },
+    { id:'ge5',  left:'Suma de ángulos internos del triángulo', right:'180°', explanation:'Todo triángulo tiene ángulos internos que suman exactamente 180°', category:'Ángulos' },
+    { id:'ge6',  left:'Teorema de Pitágoras', right:'a² + b² = c²',    explanation:'En un triángulo rectángulo, la suma de los catetos al cuadrado igual a la hipotenusa al cuadrado', category:'Pitágoras' },
+    { id:'ge7',  left:'Volumen del cubo',    right:'l³',                explanation:'V = lado × lado × lado = l³', category:'Volúmenes' },
+    { id:'ge8',  left:'Suma ángulos cuadrilátero', right:'360°',        explanation:'Todo cuadrilátero tiene ángulos internos que suman 360°', category:'Ángulos' },
+    { id:'ge9',  left:'Área del rectángulo', right:'b × h',             explanation:'Área = base × altura', category:'Áreas' },
+    { id:'ge10', left:'Volumen cilindro',    right:'πr²h',              explanation:'V = área de la base × altura = π × r² × h', category:'Volúmenes' },
+  ]
+};
+
+/* Distractores por tema (valores incorrectos que aparecen en difícil) */
+const DISTRACTORS = {
+  operations: ['6', '16', '10', '5! = 60', '4³ = 64', '√64 = 8', '50', '36'],
+  fractions:  ['2/4', '0.4', '50%', '3/6', '5/6', '1.5', '0.75', '3/5'],
+  geometry:   ['l³', 'b×h', '4πr', 'πr', '90°', 'a²+b²', 'l²/2', '3πr²'],
+};
+
+/* ════════════════════════════════════════════
+   CONFIGURACIÓN Y ESTADO
+════════════════════════════════════════════ */
+const CFG = { level:'easy', theme:'operations' };
+
+const STATE = {
+  active: false,
+  energy: 0,
+  connections: [],      // array de conexiones del nivel actual
+  matched: new Set(),   // ids ya conectados correctamente
+  selLeft: null,        // nodo seleccionado por J. Izquierdo (index)
+  selRight: null,       // nodo seleccionado por J. Derecho (index)
+  powers: { reset:1, diag:1, over:1, hint:1 },
+  connectCount: 0,      // conexiones realizadas (ok o fail)
+  okCount: 0,
+  failCount: 0,
+  feedbackOpen: false,
+  syncTimeout: null,    // timer para desincronizar si uno suelta
+};
+
+/** Devuelve cuántas conexiones hay por nivel */
+function levelCount() {
+  return CFG.level==='easy'?3:CFG.level==='medium'?5:7;
+}
+
+/* ════════════════════════════════════════════
+   AUDIO
+════════════════════════════════════════════ */
+let _ac=null;
+function ac(){return _ac||(_ac=new(window.AudioContext||window.webkitAudioContext)());}
+function tone(f,type,dur,vol=0.25){
+  try{const ctx=ac(),o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);o.type=type;o.frequency.value=f;
+    g.gain.setValueAtTime(vol,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+dur);
+    o.start();o.stop(ctx.currentTime+dur);}catch(e){}
+}
+const sndConnect = ()=>{tone(523,'sine',.08);setTimeout(()=>tone(659,'sine',.1),60);setTimeout(()=>tone(784,'sine',.15),130);setTimeout(()=>tone(1047,'sine',.2),200);};
+const sndFail    = ()=>{tone(220,'sawtooth',.08,.3);setTimeout(()=>tone(180,'sawtooth',.2,.3),80);};
+const sndSelect  = ()=>tone(440,'sine',.06,.15);
+const sndPower   = ()=>{tone(330,'sine',.12);setTimeout(()=>tone(440,'sine',.12),100);};
+const sndWin     = ()=>[523,659,784,880,1047,1175].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.3),i*80));
+
+/* ════════════════════════════════════════════
+   UTILIDADES
+════════════════════════════════════════════ */
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/** Prepara el array de conexiones para el nivel actual */
+function buildConnections(){
+  const pool = shuffle([...DATA[CFG.theme]]);
+  const n    = levelCount();
+  const base = pool.slice(0, n);
+
+  if(CFG.level==='hard'){
+    // Añadir distractores al lado derecho
+    const dPool = shuffle([...DISTRACTORS[CFG.theme]]);
+    base.forEach((c,i)=>{ c._distractor = dPool[i % dPool.length]; });
+  }
+  return base;
+}
+
+/* ════════════════════════════════════════════
+   RENDER — Construir los nodos en el DOM
+════════════════════════════════════════════ */
+/**
+ * Renderiza los nodos en ambos paneles.
+ * El panel izquierdo muestra el campo 'left' de cada conexión.
+ * El panel derecho muestra el campo 'right' MEZCLADO + distractores en hard.
+ */
+function renderNodes(){
+  const leftList  = document.getElementById('nodes-left');
+  const rightList = document.getElementById('nodes-right');
+  leftList.innerHTML  = '';
+  rightList.innerHTML = '';
+
+  const conns = STATE.connections;
+
+  // Lado izquierdo: en el mismo orden
+  conns.forEach((c,i)=>{
+    const el = document.createElement('div');
+    el.className='node';
+    el.dataset.idx = i;
+    el.innerHTML = `<span class="node-idx">${String.fromCharCode(65+i)}</span>${c.left}`;
+    el.addEventListener('pointerdown', e=>{ e.preventDefault(); onSelectLeft(i, el); });
+    leftList.appendChild(el);
+  });
+
+  // Lado derecho: mezclar + distractores
+  let rightItems = conns.map((c,i)=>({ text:c.right, realIdx:i, isDistractor:false }));
+  if(CFG.level==='hard'){
+    // Añadir distractores como items sin realIdx válido
+    conns.forEach(c=>{
+      rightItems.push({ text:c._distractor, realIdx:-1, isDistractor:true });
+    });
+  }
+  shuffle(rightItems);
+
+  rightItems.forEach((item,i)=>{
+    const el = document.createElement('div');
+    el.className = 'node' + (item.isDistractor?' distractor':'');
+    el.dataset.idx     = i;
+    el.dataset.realIdx = item.realIdx;
+    el.innerHTML = `<span class="node-idx">${i+1}</span>${item.text}`;
+    el.addEventListener('pointerdown', e=>{ e.preventDefault(); onSelectRight(i, el); });
+    rightList.appendChild(el);
+  });
+
+  // Dots de progreso
+  const dotsEl = document.getElementById('conn-dots');
+  dotsEl.innerHTML = '';
+  conns.forEach((_,i)=>{
+    const d = document.createElement('div');
+    d.className = 'conn-dot' + (i===0?' active':'');
+    d.id = `cdot-${i}`;
+    dotsEl.appendChild(d);
+  });
+
+  updateRoundInfo();
+}
+
+/* ════════════════════════════════════════════
+   LÓGICA DE SELECCIÓN SIMULTÁNEA
+════════════════════════════════════════════ */
+/**
+ * Gestiona la selección del jugador izquierdo.
+ * Si ya hay algo seleccionado a la derecha → verificar par.
+ */
+function onSelectLeft(idx, el){
+  if(!STATE.active || STATE.feedbackOpen) return;
+
+  // Deseleccionar si ya estaba seleccionado
+  const leftNodes = document.querySelectorAll('#nodes-left .node');
+  leftNodes.forEach(n=>n.classList.remove('selecting'));
+
+  // Si el nodo ya está matched, ignorar
+  if(el.classList.contains('matched')) return;
+
+  sndSelect();
+  STATE.selLeft = idx;
+  el.classList.add('selecting');
+  updateSyncDots();
+  drawSelectionCable();
+
+  // Si el otro ya eligió, verificar
+  if(STATE.selRight !== null) tryConnect();
+}
+
+/**
+ * Gestiona la selección del jugador derecho.
+ */
+function onSelectRight(idx, el){
+  if(!STATE.active || STATE.feedbackOpen) return;
+
+  const rightNodes = document.querySelectorAll('#nodes-right .node');
+  rightNodes.forEach(n=>n.classList.remove('selecting'));
+
+  if(el.classList.contains('matched')) return;
+
+  sndSelect();
+  STATE.selRight = idx;
+  el.classList.add('selecting');
+  updateSyncDots();
+  drawSelectionCable();
+
+  if(STATE.selLeft !== null) tryConnect();
+}
+
+/**
+ * Intenta conectar los dos nodos seleccionados.
+ * Correcto: leftIdx coincide con realIdx del nodo derecho seleccionado.
+ */
+function tryConnect(){
+  if(STATE.selLeft === null || STATE.selRight === null) return;
+
+  const leftIdx  = STATE.selLeft;
+  const rightEl  = document.querySelectorAll('#nodes-right .node')[STATE.selRight];
+  const realIdx  = parseInt(rightEl.dataset.realIdx);
+  const ok       = realIdx === leftIdx;
+
+  STATE.connectCount++;
+
+  if(ok){
+    STATE.okCount++;
+    STATE.matched.add(leftIdx);
+    connectSuccess(leftIdx, STATE.selRight);
+  } else {
+    connectFail(leftIdx, STATE.selRight);
+  }
+
+  // Limpiar selección
+  STATE.selLeft  = null;
+  STATE.selRight = null;
+}
+
+/**
+ * Conexión correcta: animar, sumar energía, mostrar feedback.
+ */
+function connectSuccess(leftIdx, rightIdx){
+  const conn = STATE.connections[leftIdx];
+  sndConnect();
+
+  // Marcar nodos
+  const leftEl  = document.querySelectorAll('#nodes-left .node')[leftIdx];
+  const rightEl = document.querySelectorAll('#nodes-right .node')[rightIdx];
+  if(leftEl)  leftEl.classList.add('matched');
+  if(rightEl) rightEl.classList.add('matched');
+
+  // Energía
+  const gain = 20;
+  STATE.energy = Math.min(100, STATE.energy + gain);
+  updateEnergy();
+
+  // Cable iluminado permanente
+  drawMatchedCable(leftIdx, rightIdx, true);
+
+  // Actualizar dots de progreso
+  const dot = document.getElementById(`cdot-${leftIdx}`);
+  if(dot){ dot.classList.remove('active'); dot.classList.add('done'); }
+  // Marcar siguiente como activo
+  const next = document.querySelector('.conn-dot:not(.done):not(.active)');
+  if(next) next.classList.add('active');
+
+  // Feedback
+  setTimeout(()=>{
+    showFeedback(true, conn.explanation, gain, ()=>{
+      // ¿Ganamos?
+      if(STATE.energy >= 100 || STATE.matched.size >= STATE.connections.length){
+        setTimeout(endGame, 400);
+      }
+    });
+  }, 300);
+}
+
+/**
+ * Conexión incorrecta: cortocircuito, restar energía.
+ */
+function connectFail(leftIdx, rightIdx){
+  STATE.failCount++;
+  sndFail();
+
+  // Flash de cortocircuito
+  const sc = document.getElementById('short-circuit');
+  sc.classList.remove('zap');
+  void sc.offsetWidth;
+  sc.classList.add('zap');
+
+  // Animar nodos
+  const leftEl  = document.querySelectorAll('#nodes-left .node')[leftIdx];
+  const rightEl = document.querySelectorAll('#nodes-right .node')[rightIdx];
+  [leftEl, rightEl].forEach(el=>{
+    if(!el) return;
+    el.classList.add('wrong-flash');
+    setTimeout(()=>el.classList.remove('wrong-flash','selecting'), 500);
+  });
+
+  // Energía
+  STATE.energy = Math.max(0, STATE.energy - 10);
+  updateEnergy();
+
+  clearCables();
+  updateSyncDots(false);
+
+  // Feedback breve sin bloquear
+  showFeedback(false, '¡Conexión incorrecta! Esa fuente y ese dispositivo no se corresponden. Intentad de nuevo.', -10, null);
+}
+
+/* ════════════════════════════════════════════
+   CABLE CANVAS — Dibujo de conexiones
+════════════════════════════════════════════ */
+const canvas  = document.getElementById('cable-canvas');
+const ctx2    = canvas.getContext('2d');
+const matched_cables = []; // cables permanentes { leftIdx, rightIdx }
+
+function resizeCanvas(){
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', ()=>{ resizeCanvas(); redrawAllCables(); });
+resizeCanvas();
+
+/** Obtiene el centro de un nodo del DOM */
+function getNodeCenter(side, idx){
+  const list = document.querySelectorAll(`#nodes-${side} .node`);
+  if(!list[idx]) return null;
+  const r = list[idx].getBoundingClientRect();
+  return { x: r.left + r.width/2, y: r.top + r.height/2 };
+}
+
+/** Dibuja un cable entre dos nodos (puede ser temporal o permanente) */
+function drawCable(p1, p2, color, glow, width=3, dashed=false){
+  if(!p1||!p2) return;
+  const cx = (p1.x + p2.x)/2;
+  ctx2.save();
+  ctx2.beginPath();
+  ctx2.moveTo(p1.x, p1.y);
+  ctx2.bezierCurveTo(cx, p1.y, cx, p2.y, p2.x, p2.y);
+  if(dashed) ctx2.setLineDash([8,6]);
+  ctx2.strokeStyle = color;
+  ctx2.lineWidth   = width;
+  ctx2.shadowColor = glow;
+  ctx2.shadowBlur  = 18;
+  ctx2.lineCap     = 'round';
+  ctx2.stroke();
+  ctx2.restore();
+}
+
+/** Cable de selección temporal (punteado) */
+function drawSelectionCable(){
+  redrawAllCables();
+  if(STATE.selLeft===null && STATE.selRight===null) return;
+  const p1 = STATE.selLeft  !== null ? getNodeCenter('left',  STATE.selLeft)  : null;
+  const p2 = STATE.selRight !== null ? getNodeCenter('right', STATE.selRight) : null;
+  if(p1 && !p2){
+    // Solo lado izquierdo: línea hasta el centro
+    const cx = window.innerWidth/2;
+    drawCable(p1, {x:cx, y:p1.y}, 'rgba(0,200,255,0.4)', 'rgba(0,200,255,0.4)', 2, true);
+  } else if(!p1 && p2){
+    const cx = window.innerWidth/2;
+    drawCable({x:cx,y:p2.y}, p2, 'rgba(0,220,150,0.4)', 'rgba(0,220,150,0.4)', 2, true);
+  } else if(p1 && p2){
+    drawCable(p1, p2, 'rgba(0,255,221,0.7)', 'rgba(0,255,221,0.5)', 3, true);
+  }
+}
+
+/** Añade un cable permanente (conexión correcta) */
+function drawMatchedCable(leftIdx, rightIdx, permanent){
+  if(permanent) matched_cables.push({leftIdx, rightIdx});
+  redrawAllCables();
+}
+
+/** Redibuja todos los cables permanentes */
+function redrawAllCables(){
+  ctx2.clearRect(0,0,canvas.width,canvas.height);
+  matched_cables.forEach(({leftIdx, rightIdx})=>{
+    const p1 = getNodeCenter('left',  leftIdx);
+    const p2 = getNodeCenter('right', rightIdx);
+    drawCable(p1, p2, 'rgba(0,255,180,0.8)', 'rgba(0,255,150,0.8)', 4);
+  });
+}
+
+function clearCables(){
+  ctx2.clearRect(0,0,canvas.width,canvas.height);
+  redrawAllCables();
+}
+
+/* ════════════════════════════════════════════
+   UI — Actualizaciones
+════════════════════════════════════════════ */
+function updateEnergy(){
+  const pct  = Math.min(100, Math.max(0, STATE.energy));
+  const fill = document.getElementById('energy-fill');
+  const val  = document.getElementById('energy-val');
+  fill.style.height = pct + '%';
+  val.textContent   = Math.round(pct);
+  fill.classList.toggle('danger', pct < 20);
+}
+
+function updateRoundInfo(){
+  const n   = STATE.connections.length;
+  const done = STATE.matched.size;
+  document.getElementById('round-info').textContent = `CONEXIÓN ${done+1}/${n}`;
+}
+
+function updateSyncDots(clear=false){
+  const da = document.getElementById('sd-a');
+  const db = document.getElementById('sd-b');
+  if(clear){ da.className='sync-dot'; db.className='sync-dot'; return; }
+  const hasA = STATE.selLeft  !== null;
+  const hasB = STATE.selRight !== null;
+  if(hasA && hasB){
+    da.className='sync-dot both'; db.className='sync-dot both';
+  } else {
+    da.className='sync-dot'+(hasA?' a-active':'');
+    db.className='sync-dot'+(hasB?' b-active':'');
+  }
+}
+
+/* ════════════════════════════════════════════
+   FEEDBACK OVERLAY
+════════════════════════════════════════════ */
+function showFeedback(ok, explain, energyDelta, onClose){
+  const overlay = document.getElementById('feedback-overlay');
+  const box     = document.getElementById('feedback-box');
+  const icon    = document.getElementById('fb-icon');
+  const title   = document.getElementById('fb-title');
+  const expEl   = document.getElementById('fb-explain');
+  const enEl    = document.getElementById('fb-energy');
+
+  box.className = 'feedback-box ' + (ok?'ok':'fail');
+  icon.textContent  = ok ? '⚡' : '💥';
+  title.textContent = ok ? '¡CONEXIÓN EXITOSA!' : 'CORTOCIRCUITO';
+  expEl.textContent = explain;
+  enEl.textContent  = (energyDelta>0?'+':'')+energyDelta+' ⚡';
+
+  STATE.feedbackOpen = true;
+  overlay.classList.add('show');
+
+  const close = ()=>{
+    overlay.classList.remove('show');
+    overlay.removeEventListener('pointerdown', close);
+    STATE.feedbackOpen = false;
+    updateSyncDots(true);
+    if(onClose) onClose();
+  };
+
+  if(ok){
+    overlay.addEventListener('pointerdown', close);
+  } else {
+    // Para errores, cierra automáticamente tras 2s
+    setTimeout(close, 2000);
+  }
+}
+
+/* ════════════════════════════════════════════
+   PODERES ESPECIALES
+════════════════════════════════════════════ */
+/**
+ * Reiniciar Cable: limpia la selección actual de ambos jugadores.
+ */
+function usePowerReset(){
+  if(!STATE.powers.reset || !STATE.active) return;
+  STATE.powers.reset = 0;
+  sndPower();
+  STATE.selLeft = STATE.selRight = null;
+  document.querySelectorAll('.node.selecting').forEach(n=>n.classList.remove('selecting'));
+  clearCables();
+  updateSyncDots(true);
+  document.getElementById('pow-reset').classList.add('used');
+  document.getElementById('pu-reset').textContent='Agotado';
+}
+
+/**
+ * Diagnóstico: revela la categoría conceptual de la próxima conexión pendiente.
+ */
+function usePowerDiag(){
+  if(!STATE.powers.diag || !STATE.active) return;
+  STATE.powers.diag = 0;
+  sndPower();
+  // Encontrar primera conexión no matched
+  const pending = STATE.connections.find((_,i)=>!STATE.matched.has(i));
+  if(pending){
+    showHint(`Categoría: "${pending.category}" — busca la conexión de ese tipo`);
+  }
+  document.getElementById('pow-diag').classList.add('used');
+  document.getElementById('pu-diag').textContent='Agotado';
+}
+
+/**
+ * Sobrecarga: suma +15 energía de emergencia.
+ */
+function usePowerOverload(){
+  if(!STATE.powers.over || !STATE.active) return;
+  STATE.powers.over = 0;
+  sndPower();
+  STATE.energy = Math.min(100, STATE.energy + 15);
+  updateEnergy();
+  showHint('⚡ ¡SOBRECARGA! +15 puntos de energía');
+  document.getElementById('pow-over').classList.add('used');
+  document.getElementById('pu-over').textContent='Agotado';
+}
+
+/**
+ * Pista Conceptual: muestra la explicación de la próxima conexión pendiente.
+ */
+function usePowerHint(){
+  if(!STATE.powers.hint || !STATE.active) return;
+  STATE.powers.hint = 0;
+  sndPower();
+  const pendingIdx = STATE.connections.findIndex((_,i)=>!STATE.matched.has(i));
+  if(pendingIdx>=0){
+    const c = STATE.connections[pendingIdx];
+    showHint(`💡 Pista: "${c.left}" se conecta con algo relacionado a ${c.category}`);
+  }
+  document.getElementById('pow-hint').classList.add('used');
+  document.getElementById('pu-hint').textContent='Agotado';
+}
+
+/** Muestra un mensaje flotante temporal */
+function showHint(msg){
+  const existing = document.querySelector('.hint-box');
+  if(existing) existing.remove();
+  const el = document.createElement('div');
+  el.className='hint-box';
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 3500);
+}
+
+/* ════════════════════════════════════════════
+   CUENTA REGRESIVA
+════════════════════════════════════════════ */
+function startCountdown(cb){
+  show('screen-countdown');
+  const nE=document.getElementById('cd-number'),gE=document.getElementById('cd-go'),lE=document.getElementById('cd-label');
+  const steps=[
+    {n:'3',color:'rgba(0,200,255,1)',glow:'rgba(0,200,255,0.6)',label:'INICIALIZANDO'},
+    {n:'2',color:'rgba(255,170,0,1)',glow:'rgba(255,170,0,0.6)',label:'CARGANDO DATOS'},
+    {n:'1',color:'rgba(0,255,150,1)',glow:'rgba(0,255,150,0.6)',label:'¡LISTOS!'},
+  ];
+  function reA(el){el.style.animation='none';void el.offsetWidth;el.style.animation='';}
+  let i=0;
+  function tick(){
+    if(i>=steps.length){
+      nE.style.display='none';lE.style.display='none';
+      gE.style.display='block';reA(gE);
+      tone(1047,'sine',.4,.4);
+      setTimeout(cb,800);return;
+    }
+    const s=steps[i];
+    nE.style.display='block';gE.style.display='none';lE.style.display='block';
+    nE.textContent=s.n;nE.style.color=s.color;
+    nE.style.textShadow=`0 0 50px ${s.glow}`;
+    reA(nE);lE.textContent=s.label;reA(lE);
+    tone([392,523,659][i],'sine',.18,.3);
+    i++;setTimeout(tick,950);
+  }
+  tick();
+}
+
+/* ════════════════════════════════════════════
+   INICIO / FIN
+════════════════════════════════════════════ */
+function startGame(){
+  // Reset state
+  STATE.active      = false;
+  STATE.energy      = 0;
+  STATE.matched     = new Set();
+  STATE.selLeft     = null;
+  STATE.selRight    = null;
+  STATE.powers      = { reset:1, diag:1, over:1, hint:1 };
+  STATE.connectCount= 0;
+  STATE.okCount     = 0;
+  STATE.failCount   = 0;
+  STATE.feedbackOpen= false;
+  matched_cables.length = 0;
+
+  // Construir conexiones
+  STATE.connections = buildConnections();
+
+  // UI de poderes
+  ['reset','diag','over','hint'].forEach(p=>{
+    const btn = document.getElementById('pow-'+p);
+    btn.classList.remove('used');
+    btn.disabled = false;
+    document.getElementById('pu-'+p).textContent='1 uso';
+  });
+
+  // Badge de nivel
+  const lv = {easy:'FÁCIL · 3 CONEXIONES', medium:'INTERMEDIO · 5 CONEXIONES', hard:'AVANZADO · 7 CONEXIONES'}[CFG.level];
+  document.getElementById('level-badge').textContent=lv;
+
+  updateEnergy();
+
+  startCountdown(()=>{
+    STATE.active = true;
+    show('screen-game');
+    renderNodes();
+    resizeCanvas();
+    clearCables();
+  });
+}
+
+function endGame(){
+  STATE.active = false;
+  sndWin();
+
+  // Stats
+  document.getElementById('vic-stats').innerHTML=`
+    <div class="vic-stat"><div class="vic-stat-val">${STATE.energy}</div><div class="vic-stat-lbl">ENERGÍA FINAL</div></div>
+    <div class="vic-stat"><div class="vic-stat-val">${STATE.okCount}</div><div class="vic-stat-lbl">CONEXIONES OK</div></div>
+    <div class="vic-stat"><div class="vic-stat-val">${STATE.failCount}</div><div class="vic-stat-lbl">INTENTOS FALLIDOS</div></div>
+  `;
+
+  // Resumen conceptual
+  const list = document.getElementById('summary-list');
+  list.innerHTML = STATE.connections.map(c=>`
+    <div class="summary-item">
+      <span class="si-pair">${c.left} ↔ ${c.right}</span>
+      <span>${c.explanation}</span>
+    </div>
+  `).join('');
+
+  setTimeout(()=>show('screen-victory'), 600);
+}
+
+/* ════════════════════════════════════════════
+   EVENT LISTENERS
+════════════════════════════════════════════ */
+// Config
+document.querySelectorAll('.level-btn[data-level]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.level-btn[data-level]').forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel'); CFG.level=b.dataset.level;
+}));
+document.querySelectorAll('.level-btn[data-theme]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.level-btn[data-theme]').forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel'); CFG.theme=b.dataset.theme;
+}));
+
+// Menú
+document.getElementById('btn-play').onclick   =()=>startGame();
+document.getElementById('btn-config').onclick  =()=>show('screen-config');
+document.getElementById('cfg-back').onclick    =()=>show('screen-menu');
+document.getElementById('cfg-play').onclick    =()=>startGame();
+document.getElementById('g-menu-btn').onclick  =()=>{STATE.active=false;show('screen-menu');};
+document.getElementById('vic-replay').onclick  =()=>startGame();
+document.getElementById('vic-menu').onclick    =()=>show('screen-menu');
+
+// Poderes
+document.getElementById('pow-reset').onclick=usePowerReset;
+document.getElementById('pow-diag').onclick =usePowerDiag;
+document.getElementById('pow-over').onclick =usePowerOverload;
+document.getElementById('pow-hint').onclick =usePowerHint;
+</script>
+</body>
+</html>

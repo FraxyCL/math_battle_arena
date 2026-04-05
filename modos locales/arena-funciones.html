@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Arena de Funciones — Math Battle Arena</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
+
+:root {
+  --blue:#00aaff; --blue-dark:#0066cc; --blue-glow:rgba(0,170,255,0.35);
+  --red:#ff3355;  --red-dark:#cc0033;  --red-glow:rgba(255,51,85,0.35);
+  --gold:#ffd700; --green:#00ff66;     --green-glow:rgba(0,255,100,0.3);
+  --purple:#aa44ff; --purple-glow:rgba(170,68,255,0.35);
+  --bg:#07080f; --bg2:#0e1018; --bg3:#14161f; --bg4:#1a1d28;
+  --text:#e8eeff; --text-dim:#6878aa; --border:rgba(255,255,255,0.07);
+  --fd:'Orbitron',monospace; --fb:'Rajdhani',sans-serif;
+  --p1:#00aaff; --p2:#ff3355;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--fb);touch-action:manipulation;user-select:none;-webkit-user-select:none;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,150,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,150,255,0.02) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0;}
+
+/* ── SCREENS ── */
+.screen{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s ease;}
+.screen.active{opacity:1;pointer-events:all;}
+
+/* ══ MENÚ ══ */
+#screen-menu{background:radial-gradient(ellipse at 25% 50%,rgba(0,100,255,.08) 0%,transparent 55%),radial-gradient(ellipse at 75% 50%,rgba(255,0,80,.08) 0%,transparent 55%);}
+.logo{font-family:var(--fd);font-weight:900;font-size:clamp(24px,4.5vw,62px);text-align:center;line-height:1;letter-spacing:.04em;margin-bottom:4px;}
+.logo .b{color:var(--blue);text-shadow:0 0 30px var(--blue-glow);}
+.logo .r{color:var(--red);text-shadow:0 0 30px var(--red-glow);}
+.logo-game{font-family:var(--fd);font-size:clamp(12px,1.6vw,20px);font-weight:700;color:var(--text-dim);letter-spacing:.18em;text-align:center;margin-bottom:4px;}
+.logo-game span{color:var(--purple);text-shadow:0 0 14px var(--purple-glow);}
+.logo-sub{font-size:clamp(10px,1.2vw,13px);letter-spacing:.28em;color:var(--text-dim);text-align:center;text-transform:uppercase;margin-bottom:38px;}
+.menu-btns{display:flex;flex-direction:column;gap:10px;width:min(420px,90vw);}
+.btn{height:78px;border:none;cursor:pointer;font-family:var(--fd);font-size:clamp(13px,1.8vw,19px);font-weight:700;letter-spacing:.08em;border-radius:10px;transition:all .18s;position:relative;overflow:hidden;touch-action:manipulation;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;gap:10px;}
+.btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0);transition:background .12s;}
+.btn:active::after{background:rgba(255,255,255,.1);}
+.btn-purple{background:linear-gradient(135deg,#6622cc,var(--purple));color:#fff;box-shadow:0 0 24px var(--purple-glow),0 4px 16px rgba(0,0,0,.5);}
+.btn-purple:hover{transform:translateY(-2px);box-shadow:0 0 40px var(--purple-glow),0 8px 24px rgba(0,0,0,.5);}
+.btn-ghost{background:var(--bg3);color:var(--text-dim);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:rgba(255,255,255,.18);color:var(--text);}
+.btn-sm{height:50px!important;font-size:12px!important;border-radius:8px;}
+.btn-back{display:flex;align-items:center;justify-content:center;gap:8px;height:42px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:var(--fd);font-size:10px;letter-spacing:.14em;cursor:pointer;transition:all .15s;text-decoration:none;margin-top:6px;}
+.btn-back:hover{border-color:rgba(255,255,255,.2);color:var(--text);}
+
+/* ══ CONFIG ══ */
+#screen-config{padding:14px;overflow-y:auto;justify-content:flex-start;padding-top:20px;}
+.cfg-title{font-family:var(--fd);font-size:clamp(14px,2vw,22px);font-weight:700;color:var(--purple);text-align:center;letter-spacing:.1em;margin-bottom:14px;text-shadow:0 0 14px var(--purple-glow);}
+.cfg-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;width:min(700px,97vw);display:flex;flex-direction:column;gap:16px;}
+.cfg-lbl{font-family:var(--fd);font-size:10px;letter-spacing:.2em;color:var(--text-dim);text-transform:uppercase;margin-bottom:7px;display:block;}
+.cfg-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.cfg-row>label{font-size:clamp(13px,1.6vw,17px);color:var(--text);font-weight:600;}
+.num-ctrl{display:flex;align-items:center;gap:8px;}
+.nc-btn{width:46px;height:46px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:22px;font-family:var(--fd);cursor:pointer;transition:all .14s;touch-action:manipulation;}
+.nc-btn:hover{border-color:var(--purple);color:var(--purple);}
+.nc-val{font-family:var(--fd);font-size:26px;font-weight:700;color:var(--purple);min-width:44px;text-align:center;}
+.toggle{position:relative;width:60px;height:30px;}
+.toggle input{display:none;}
+.toggle-track{position:absolute;inset:0;background:var(--bg3);border:1px solid var(--border);border-radius:15px;cursor:pointer;transition:all .28s;}
+.toggle-track::after{content:'';position:absolute;width:20px;height:20px;background:var(--text-dim);border-radius:50%;top:4px;left:4px;transition:all .28s;}
+.toggle input:checked+.toggle-track{background:rgba(170,68,255,.18);border-color:var(--purple);}
+.toggle input:checked+.toggle-track::after{transform:translateX(30px);background:var(--purple);}
+.place-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.place-btn{padding:12px;border-radius:8px;border:2px solid var(--border);background:var(--bg3);color:var(--text-dim);font-family:var(--fd);font-size:10px;font-weight:700;cursor:pointer;transition:all .18s;touch-action:manipulation;text-align:center;line-height:1.5;}
+.place-btn.sel{background:rgba(170,68,255,.1);border-color:var(--purple);color:var(--purple);}
+.fn-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.fn-chip{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);font-family:var(--fd);font-size:9px;letter-spacing:.1em;color:var(--text-dim);cursor:pointer;transition:all .15s;touch-action:manipulation;}
+.fn-chip.on{border-color:var(--purple);background:rgba(170,68,255,.1);color:var(--purple);}
+.cfg-footer{display:flex;flex-direction:column;gap:8px;width:min(700px,97vw);margin-top:10px;}
+
+/* ══ POSICIONAMIENTO MANUAL ══ */
+#screen-place{flex-direction:column;gap:0;}
+.place-header{width:100%;background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.place-title{font-family:var(--fd);font-size:clamp(12px,1.5vw,18px);font-weight:700;}
+.place-info{font-family:var(--fd);font-size:11px;letter-spacing:.12em;color:var(--text-dim);}
+#place-canvas-wrap{flex:1;position:relative;overflow:hidden;width:100%;}
+#place-canvas{display:block;cursor:crosshair;touch-action:none;}
+.place-footer{width:100%;background:var(--bg2);border-top:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;}
+.place-hint{font-family:var(--fd);font-size:10px;letter-spacing:.12em;color:var(--text-dim);}
+
+/* ══ CUENTA REGRESIVA ══ */
+#screen-countdown{background:radial-gradient(ellipse at 25% 50%,rgba(0,100,255,.1) 0%,transparent 55%),radial-gradient(ellipse at 75% 50%,rgba(255,0,80,.1) 0%,transparent 55%);}
+.cd-number{font-family:var(--fd);font-size:clamp(130px,22vw,260px);font-weight:900;line-height:1;animation:cd-pop .85s cubic-bezier(.22,1,.36,1) both;}
+.cd-go{font-family:var(--fd);font-size:clamp(70px,14vw,170px);font-weight:900;color:var(--purple);text-shadow:0 0 50px var(--purple-glow);animation:cd-pop .6s cubic-bezier(.22,1,.36,1) both;display:none;}
+.cd-label{font-family:var(--fd);font-size:clamp(12px,1.8vw,20px);letter-spacing:.32em;color:var(--text-dim);text-transform:uppercase;margin-top:10px;animation:cd-fade .85s ease both;}
+@keyframes cd-pop{0%{opacity:0;transform:scale(1.8)}40%{opacity:1;transform:scale(.92)}70%{transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}
+@keyframes cd-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══ JUEGO ══ */
+#screen-game{flex-direction:row;align-items:stretch;padding:0;}
+.game-layout{width:100vw;height:100vh;display:grid;grid-template-rows:48px 1fr;grid-template-columns:220px 1fr 220px;overflow:hidden;}
+
+/* Topbar */
+.g-topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 12px;gap:8px;}
+.g-topbar-l{display:flex;align-items:center;gap:10px;}
+.g-title{font-family:var(--fd);font-size:9px;letter-spacing:.2em;color:var(--text-dim);}
+.g-game{font-family:var(--fd);font-size:9px;letter-spacing:.14em;color:var(--purple);}
+.turn-badge{font-family:var(--fd);font-size:11px;font-weight:700;letter-spacing:.1em;padding:4px 12px;border-radius:6px;}
+.turn-badge.p1{background:rgba(0,170,255,.15);color:var(--blue);border:1px solid rgba(0,170,255,.3);}
+.turn-badge.p2{background:rgba(255,51,85,.15);color:var(--red);border:1px solid rgba(255,51,85,.3);}
+.g-btns{display:flex;gap:6px;}
+.g-btn{height:28px;padding:0 10px;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--text-dim);font-family:var(--fd);font-size:9px;letter-spacing:.1em;cursor:pointer;transition:all .15s;touch-action:manipulation;text-decoration:none;display:flex;align-items:center;}
+.g-btn:hover{border-color:rgba(255,255,255,.2);color:var(--text);}
+
+/* Panel de jugador */
+.player-panel{display:flex;flex-direction:column;padding:10px 8px;gap:8px;overflow:hidden;}
+.pp-left{background:linear-gradient(170deg,rgba(0,100,200,.06) 0%,transparent 60%);border-right:1px solid var(--border);}
+.pp-right{background:linear-gradient(190deg,rgba(200,0,60,.06) 0%,transparent 60%);border-left:1px solid var(--border);}
+.pp-header{display:flex;align-items:center;gap:7px;flex-shrink:0;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.pp-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:11px;font-weight:900;flex-shrink:0;}
+.pp-left .pp-avatar{background:var(--blue-dark);color:#fff;box-shadow:0 0 10px var(--blue-glow);}
+.pp-right .pp-avatar{background:var(--red-dark);color:#fff;box-shadow:0 0 10px var(--red-glow);}
+.pp-name{font-family:var(--fd);font-size:11px;font-weight:700;letter-spacing:.07em;}
+.pp-left .pp-name{color:var(--blue);}
+.pp-right .pp-name{color:var(--red);}
+
+/* Puntos de vida */
+.hp-row{display:flex;flex-wrap:wrap;gap:4px;flex-shrink:0;}
+.hp-dot{width:14px;height:14px;border-radius:50%;transition:all .3s;}
+.hp-dot.alive-p1{background:var(--blue);box-shadow:0 0 6px var(--blue-glow);}
+.hp-dot.alive-p2{background:var(--red);box-shadow:0 0 6px var(--red-glow);}
+.hp-dot.dead{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);}
+
+/* Turno indicador */
+.active-indicator{font-family:var(--fd);font-size:9px;letter-spacing:.15em;padding:3px 8px;border-radius:4px;text-align:center;flex-shrink:0;}
+.pp-left .active-indicator.on{background:rgba(0,170,255,.12);color:var(--blue);border:1px solid rgba(0,170,255,.25);}
+.pp-right .active-indicator.on{background:rgba(255,51,85,.12);color:var(--red);border:1px solid rgba(255,51,85,.25);}
+.active-indicator.off{background:transparent;color:var(--text-dim);border:1px solid var(--border);}
+
+/* Constructor de función */
+.fn-builder{flex:1;display:flex;flex-direction:column;gap:7px;min-height:0;overflow:hidden;}
+.fn-builder.disabled{opacity:.35;pointer-events:none;}
+.fn-sel{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;flex-shrink:0;}
+.fn-opt{padding:6px 4px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);font-family:var(--fd);font-size:8px;letter-spacing:.06em;color:var(--text-dim);cursor:pointer;transition:all .14s;touch-action:manipulation;text-align:center;}
+.fn-opt.sel-p1{background:rgba(0,170,255,.1);border-color:rgba(0,170,255,.4);color:var(--blue);}
+.fn-opt.sel-p2{background:rgba(255,51,85,.1);border-color:rgba(255,51,85,.4);color:var(--red);}
+.fn-formula{font-family:var(--fd);font-size:clamp(10px,1vw,13px);font-weight:700;text-align:center;padding:6px 4px;background:var(--bg4);border-radius:6px;border:1px solid var(--border);letter-spacing:.04em;flex-shrink:0;min-height:32px;display:flex;align-items:center;justify-content:center;}
+.sliders-area{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;min-height:0;}
+.slider-row{display:flex;flex-direction:column;gap:2px;}
+.slider-lbl{font-family:var(--fd);font-size:9px;letter-spacing:.1em;display:flex;justify-content:space-between;}
+.slider-lbl .sv{font-weight:700;}
+.pp-left .slider-lbl .sv{color:var(--blue);}
+.pp-right .slider-lbl .sv{color:var(--red);}
+input[type=range]{width:100%;height:4px;border-radius:2px;outline:none;cursor:pointer;-webkit-appearance:none;background:var(--bg4);border:1px solid var(--border);}
+.pp-left input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--blue);box-shadow:0 0 6px var(--blue-glow);cursor:pointer;}
+.pp-right input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--red);box-shadow:0 0 6px var(--red-glow);cursor:pointer;}
+
+.btn-fire{flex-shrink:0;min-height:42px;border:none;border-radius:9px;font-family:var(--fd);font-weight:700;letter-spacing:.1em;font-size:clamp(11px,1.3vw,15px);cursor:pointer;transition:all .14s;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-fire-p1{background:linear-gradient(135deg,var(--blue-dark),var(--blue));color:#fff;box-shadow:0 0 18px var(--blue-glow);}
+.btn-fire-p2{background:linear-gradient(135deg,var(--red-dark),var(--red));color:#fff;box-shadow:0 0 18px var(--red-glow);}
+.btn-fire:active{transform:scale(.97);}
+.btn-fire.disabled{opacity:.3;pointer-events:none;}
+
+/* ── CANVAS ── */
+#game-canvas{display:block;touch-action:none;}
+.canvas-wrap{position:relative;overflow:hidden;}
+
+/* ══ FEEDBACK PEDAGÓGICO ══ */
+.feedback-overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.65);opacity:0;pointer-events:none;transition:opacity .3s;}
+.feedback-overlay.show{opacity:1;pointer-events:all;}
+.feedback-box{background:var(--bg2);border-radius:14px;padding:22px 26px;width:min(520px,92vw);max-height:80vh;overflow-y:auto;border:1px solid var(--border);box-shadow:0 0 40px rgba(0,0,0,.7);}
+.fb-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.fb-icon{font-size:28px;}
+.fb-title{font-family:var(--fd);font-size:clamp(13px,1.8vw,20px);font-weight:700;letter-spacing:.08em;}
+.fb-hit .fb-title{color:var(--green);}
+.fb-miss .fb-title{color:var(--text-dim);}
+.fb-elim .fb-title{color:var(--gold);}
+.fb-section{margin-bottom:12px;}
+.fb-section-title{font-family:var(--fd);font-size:9px;letter-spacing:.18em;color:var(--text-dim);margin-bottom:6px;}
+.fb-formula-big{font-family:var(--fd);font-size:clamp(14px,2vw,22px);font-weight:700;color:var(--purple);text-align:center;padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);}
+.fb-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.fb-item{background:var(--bg3);border-radius:7px;padding:8px 10px;border:1px solid var(--border);}
+.fb-item-lbl{font-family:var(--fd);font-size:8px;letter-spacing:.15em;color:var(--text-dim);margin-bottom:3px;}
+.fb-item-val{font-family:var(--fd);font-size:clamp(12px,1.4vw,16px);font-weight:700;color:var(--text);}
+.fb-explain{font-size:14px;color:var(--text);line-height:1.6;background:var(--bg3);border-radius:8px;padding:10px 12px;border-left:3px solid var(--purple);}
+.fb-continue{font-family:var(--fd);font-size:10px;letter-spacing:.2em;color:var(--text-dim);text-align:center;margin-top:14px;animation:blink-fb 1.4s ease-in-out infinite;}
+@keyframes blink-fb{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* ══ FIN DE PARTIDA ══ */
+#screen-end{flex-direction:column;gap:14px;}
+.end-glow-p1{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,170,255,.12) 0%,transparent 65%);pointer-events:none;}
+.end-glow-p2{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,51,85,.12) 0%,transparent 65%);pointer-events:none;}
+.end-lbl{font-family:var(--fd);font-size:clamp(11px,1.4vw,14px);letter-spacing:.4em;color:var(--text-dim);}
+.end-winner{font-family:var(--fd);font-size:clamp(44px,8vw,100px);font-weight:900;line-height:1;}
+.end-winner.p1{color:var(--blue);text-shadow:0 0 40px var(--blue-glow);}
+.end-winner.p2{color:var(--red);text-shadow:0 0 40px var(--red-glow);}
+.end-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:min(440px,90vw);}
+.end-stat{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:10px;text-align:center;}
+.end-stat-val{font-family:var(--fd);font-size:clamp(18px,2.5vw,28px);font-weight:900;color:var(--purple);}
+.end-stat-lbl{font-family:var(--fd);font-size:8px;letter-spacing:.14em;color:var(--text-dim);margin-top:2px;}
+.history-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;width:min(500px,92vw);max-height:25vh;overflow-y:auto;}
+.hist-title{font-family:var(--fd);font-size:9px;letter-spacing:.18em;color:var(--purple);margin-bottom:8px;}
+.hist-item{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px;}
+.hist-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.hist-dot.p1{background:var(--blue);}
+.hist-dot.p2{background:var(--red);}
+.hist-fn{font-family:var(--fd);font-size:10px;color:var(--text-dim);}
+.hist-result{font-family:var(--fd);font-size:10px;}
+.hist-result.hit{color:var(--green);}
+.hist-result.miss{color:var(--text-dim);}
+.end-btns{display:flex;flex-direction:column;gap:8px;width:min(280px,90vw);}
+
+/* ── misc ── */
+.particle{position:fixed;pointer-events:none;animation:pfloat linear forwards;}
+@keyframes pfloat{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(105vh) rotate(720deg);opacity:0}}
+@keyframes flash{to{opacity:0}}
+@keyframes blink{50%{opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- ══ MENÚ ══ -->
+<div class="screen active" id="screen-menu">
+  <div class="logo"><span class="b">MATH</span> <span style="color:#fff">BATTLE</span> <span class="r">ARENA</span></div>
+  <div class="logo-game">📐 <span>Arena de Funciones</span></div>
+  <div class="logo-sub">Dispara funciones · Elimina al rival · Aprende</div>
+  <div class="menu-btns">
+    <button class="btn btn-purple" id="btn-play">▶ &nbsp;INICIAR ARENA</button>
+    <button class="btn btn-ghost"  id="btn-config">⚙ &nbsp;CONFIGURACIÓN</button>
+    <a class="btn-back" href="../index.html">← Volver al Hub de Juegos</a>
+  </div>
+</div>
+
+<!-- ══ CONFIGURACIÓN ══ -->
+<div class="screen" id="screen-config">
+  <div class="cfg-title">⚙ CONFIGURACIÓN DE ARENA</div>
+  <div class="cfg-panel">
+
+    <div class="cfg-row">
+      <label>🎯 Puntos por jugador</label>
+      <div class="num-ctrl">
+        <button class="nc-btn" id="pts-dec">−</button>
+        <div class="nc-val" id="pts-val">3</div>
+        <button class="nc-btn" id="pts-inc">+</button>
+      </div>
+    </div>
+
+    <div>
+      <label class="cfg-lbl">📍 Posicionamiento inicial</label>
+      <div class="place-grid">
+        <button class="place-btn sel" data-place="random">🎲 Aleatorio<br><span style="font-size:9px;opacity:.6">Zonas seguras automáticas</span></button>
+        <button class="place-btn" data-place="manual">✋ Manual<br><span style="font-size:9px;opacity:.6">Cada jugador coloca sus puntos</span></button>
+      </div>
+    </div>
+
+    <div>
+      <label class="cfg-lbl">📐 Funciones disponibles</label>
+      <div class="fn-chips" id="fn-chips">
+        <div class="fn-chip on" data-fn="linear">Lineal  f(x)=mx+b</div>
+        <div class="fn-chip on" data-fn="quad">Cuadrática  f(x)=a(x-h)²+k</div>
+        <div class="fn-chip on" data-fn="abs">Valor Absoluto  f(x)=a|x-h|+k</div>
+      </div>
+    </div>
+
+    <div class="cfg-row">
+      <label>🔢 Límite de turnos (0 = ilimitado)</label>
+      <div class="num-ctrl">
+        <button class="nc-btn" id="turns-dec">−</button>
+        <div class="nc-val" id="turns-val">10</div>
+        <button class="nc-btn" id="turns-inc">+</button>
+      </div>
+    </div>
+
+    <div class="cfg-row">
+      <label>🔵 Radio de impacto</label>
+      <div class="num-ctrl">
+        <button class="nc-btn" id="rad-dec">−</button>
+        <div class="nc-val" id="rad-val">1.0</div>
+        <button class="nc-btn" id="rad-inc">+</button>
+      </div>
+    </div>
+
+    <div class="cfg-row">
+      <label>📏 Cuadrícula visible</label>
+      <label class="toggle"><input type="checkbox" id="tog-grid" checked><div class="toggle-track"></div></label>
+    </div>
+
+    <div class="cfg-row">
+      <label>👁 Previsualización de función</label>
+      <label class="toggle"><input type="checkbox" id="tog-preview" checked><div class="toggle-track"></div></label>
+    </div>
+
+  </div>
+  <div class="cfg-footer">
+    <button class="btn btn-purple" id="cfg-start">▶ &nbsp;INICIAR</button>
+    <button class="btn btn-ghost btn-sm" id="cfg-back">← VOLVER</button>
+  </div>
+</div>
+
+<!-- ══ POSICIONAMIENTO MANUAL ══ -->
+<div class="screen" id="screen-place">
+  <div class="place-header">
+    <div>
+      <div class="place-title" id="place-title" style="color:var(--blue)">JUGADOR AZUL — Coloca tus puntos</div>
+      <div class="place-info" id="place-info">Toca el plano para colocar • Zona izquierda</div>
+    </div>
+    <div id="place-count" style="font-family:var(--fd);font-size:18px;font-weight:700;color:var(--purple)">0/3</div>
+  </div>
+  <div id="place-canvas-wrap">
+    <canvas id="place-canvas"></canvas>
+  </div>
+  <div class="place-footer">
+    <div class="place-hint" id="place-hint">Coloca los puntos en tu zona (mitad del plano)</div>
+    <button class="btn btn-ghost btn-sm" id="place-undo" style="width:100px">↩ DESHACER</button>
+    <button class="btn btn-purple btn-sm" id="place-next" style="width:120px;opacity:.4" disabled>SIGUIENTE →</button>
+  </div>
+</div>
+
+<!-- ══ CUENTA REGRESIVA ══ -->
+<div class="screen" id="screen-countdown">
+  <div class="cd-number" id="cd-number">3</div>
+  <div class="cd-go"     id="cd-go">¡FUEGO!</div>
+  <div class="cd-label"  id="cd-label">PREPARANDO ARENA</div>
+</div>
+
+<!-- ══ JUEGO ══ -->
+<div class="screen" id="screen-game">
+  <div class="game-layout">
+
+    <div class="g-topbar">
+      <div class="g-topbar-l">
+        <div class="g-title">MATH BATTLE ARENA</div>
+        <div style="color:var(--border)">·</div>
+        <div class="g-game">📐 Arena de Funciones</div>
+      </div>
+      <div class="turn-badge p1" id="turn-badge">TURNO: AZUL</div>
+      <div style="font-family:var(--fd);font-size:10px;color:var(--text-dim)" id="turn-counter">Turno 1</div>
+      <div class="g-btns">
+        <button class="g-btn" id="g-menu-btn">↩ MENÚ</button>
+        <a class="g-btn" href="../index.html">⊞ HUB</a>
+      </div>
+    </div>
+
+    <!-- Panel Jugador 1 (Azul) -->
+    <div class="player-panel pp-left" id="pp-p1">
+      <div class="pp-header">
+        <div class="pp-avatar">J1</div>
+        <div>
+          <div class="pp-name">JUGADOR AZUL</div>
+          <div style="font-family:var(--fd);font-size:9px;color:var(--text-dim)">Puntos activos</div>
+        </div>
+      </div>
+      <div class="hp-row" id="hp-p1"></div>
+      <div class="active-indicator on" id="ind-p1">◉ TU TURNO</div>
+      <div class="fn-builder" id="builder-p1">
+        <div class="fn-sel" id="fn-sel-p1"></div>
+        <div class="fn-formula" id="formula-p1">f(x) = x</div>
+        <div class="sliders-area" id="sliders-p1"></div>
+        <button class="btn-fire btn-fire-p1" id="fire-p1">🎯 &nbsp;DISPARAR</button>
+      </div>
+    </div>
+
+    <!-- Canvas central -->
+    <div class="canvas-wrap" id="canvas-wrap">
+      <canvas id="game-canvas"></canvas>
+    </div>
+
+    <!-- Panel Jugador 2 (Rojo) -->
+    <div class="player-panel pp-right" id="pp-p2">
+      <div class="pp-header">
+        <div class="pp-avatar">J2</div>
+        <div style="text-align:right">
+          <div class="pp-name">JUGADOR ROJO</div>
+          <div style="font-family:var(--fd);font-size:9px;color:var(--text-dim)">Puntos activos</div>
+        </div>
+      </div>
+      <div class="hp-row" id="hp-p2"></div>
+      <div class="active-indicator off" id="ind-p2">◎ ESPERA</div>
+      <div class="fn-builder disabled" id="builder-p2">
+        <div class="fn-sel" id="fn-sel-p2"></div>
+        <div class="fn-formula" id="formula-p2">f(x) = x</div>
+        <div class="sliders-area" id="sliders-p2"></div>
+        <button class="btn-fire btn-fire-p2 disabled" id="fire-p2">🎯 &nbsp;DISPARAR</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ FEEDBACK OVERLAY ══ -->
+<div class="feedback-overlay" id="feedback-overlay">
+  <div class="feedback-box" id="feedback-box">
+    <div class="fb-header">
+      <div class="fb-icon" id="fb-icon">📐</div>
+      <div class="fb-title" id="fb-title">DISPARO ANALIZADO</div>
+    </div>
+    <div class="fb-section">
+      <div class="fb-section-title">FUNCIÓN DISPARADA</div>
+      <div class="fb-formula-big" id="fb-formula"></div>
+    </div>
+    <div class="fb-section">
+      <div class="fb-section-title">PROPIEDADES MATEMÁTICAS</div>
+      <div class="fb-grid" id="fb-props"></div>
+    </div>
+    <div class="fb-section">
+      <div class="fb-section-title">ANÁLISIS DEL COMPORTAMIENTO</div>
+      <div class="fb-explain" id="fb-explain"></div>
+    </div>
+    <div class="fb-continue">Toca para continuar</div>
+  </div>
+</div>
+
+<!-- ══ FIN DE PARTIDA ══ -->
+<div class="screen" id="screen-end">
+  <div class="end-glow-p1" id="end-glow" style="display:none"></div>
+  <div class="end-lbl" id="end-lbl">🏆 GANADOR</div>
+  <div class="end-winner" id="end-winner">AZUL</div>
+  <div class="end-stats" id="end-stats"></div>
+  <div class="history-box">
+    <div class="hist-title">📋 HISTORIAL DE DISPAROS</div>
+    <div id="hist-list"></div>
+  </div>
+  <div class="end-btns">
+    <button class="btn btn-purple" id="end-replay">↺ &nbsp;NUEVA PARTIDA</button>
+    <button class="btn btn-ghost btn-sm" id="end-menu">↩ MENÚ</button>
+    <a class="btn-back" href="../index.html">⊞ Hub de Juegos</a>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   ARENA DE FUNCIONES — Motor principal
+   Módulos:
+   ├── CFG    Configuración
+   ├── MATH   Motor matemático puro
+   ├── DRAW   Renderizado en canvas
+   ├── PLACE  Fase de posicionamiento manual
+   ├── GAME   Lógica de juego y turnos
+   ├── BUILD  Constructor de función (sliders)
+   ├── PEDAGOGY  Feedback educativo
+   └── UI     Pantallas y eventos
+══════════════════════════════════════════════════ */
+
+/* ══ CFG — Configuración ══ */
+const CFG = {
+  pointsPerPlayer: 3,
+  placement: 'random',   // 'random' | 'manual'
+  activeFns: new Set(['linear','quad','abs']),
+  maxTurns: 10,
+  impactRadius: 1.0,
+  showGrid: true,
+  showPreview: true,
+  // Plano cartesiano
+  xMin:-10, xMax:10,
+  yMin:-8,  yMax:8,
+};
+
+/* ══ STATE — Estado del juego ══ */
+const STATE = {
+  turn: 1,           // 1 o 2
+  turnCount: 1,
+  points: {1:[], 2:[]},      // [{x,y,alive}, ...]
+  shots: [],                 // historial de disparos
+  phase: 'idle',             // 'idle'|'firing'|'feedback'
+  animFrame: null,
+  currentFn: {1:null, 2:null},
+  preview: {active:false, player:1},
+};
+
+/* ══ MATH — Motor matemático puro ══ */
+const MATH = {
+  /**
+   * Evalúa la función trasladada al punto de origen (x0,y0).
+   * La función global es: Y = y0 + f(x - x0)
+   * @param {Function} fn  función local f(t)
+   * @param {number} x     coordenada global x
+   * @param {number} x0    origen del disparo (x del punto activo)
+   * @param {number} y0    origen del disparo (y del punto activo)
+   */
+  evalShot(fn, x, x0, y0) {
+    const t = x - x0;
+    const localY = fn(t);
+    return y0 + localY;
+  },
+
+  /**
+   * Determina si la gráfica de un disparo impacta un punto enemigo.
+   * Muestrea la función en muchos puntos y busca cercanía.
+   * @param {Object} shot  {fn, x0, y0}
+   * @param {Object} target {x, y}
+   * @param {number} radius
+   */
+  checkImpact(shot, target, radius) {
+    // Evaluamos en un rango alrededor del target.x
+    const steps = 400;
+    const range = CFG.xMax - CFG.xMin;
+    const dx    = range / steps;
+    let minDist = Infinity;
+    for (let i = 0; i <= steps; i++) {
+      const x  = CFG.xMin + i * dx;
+      const y  = MATH.evalShot(shot.fn, x, shot.x0, shot.y0);
+      if (!isFinite(y) || isNaN(y)) continue;
+      const dist = Math.sqrt((x - target.x)**2 + (y - target.y)**2);
+      if (dist < minDist) minDist = dist;
+    }
+    return minDist <= radius;
+  },
+
+  /** Genera los puntos (x,y) de una función disparada para dibujar */
+  sampleShot(shot, steps = 600) {
+    const dx    = (CFG.xMax - CFG.xMin) / steps;
+    const pts   = [];
+    let prevY   = null;
+    for (let i = 0; i <= steps; i++) {
+      const x = CFG.xMin + i * dx;
+      const y = MATH.evalShot(shot.fn, x, shot.x0, shot.y0);
+      if (!isFinite(y) || isNaN(y)) { prevY=null; pts.push(null); continue; }
+      // Detección de salto brusco (discontinuidad)
+      if (prevY !== null && Math.abs(y - prevY) > (CFG.yMax - CFG.yMin) * 0.6) {
+        pts.push(null);
+      } else {
+        pts.push({x, y});
+      }
+      prevY = y;
+    }
+    return pts;
+  },
+
+  /** Calcula propiedades pedagógicas de una función */
+  analyze(params) {
+    const {type, a, b, h, k, m} = params;
+    const props = {};
+    if (type === 'linear') {
+      props.pendiente   = m;
+      props.interceptoY = b;
+      props.creciente   = m > 0;
+      props.tipo        = 'Lineal';
+      props.formula     = MATH.fmtLinear(m, b);
+      props.explain     = `Función lineal con pendiente ${m}. ${m>0?'Crece':'Decrece'} de izquierda a derecha. Intercepta el eje Y en ${b}.`;
+    } else if (type === 'quad') {
+      props.vertice     = {x: h, y: k};
+      props.concavidad  = a > 0 ? 'hacia arriba ∪' : 'hacia abajo ∩';
+      props.tipo        = 'Cuadrática';
+      props.formula     = MATH.fmtQuad(a, h, k);
+      props.explain     = `Parábola con vértice en (${h}, ${k}). Concavidad ${props.concavidad}. Parámetro a=${a} controla la apertura: ${Math.abs(a)>1?'más cerrada':'más abierta'} que la parábola estándar.`;
+    } else if (type === 'abs') {
+      props.vertice     = {x: h, y: k};
+      props.apertura    = a > 0 ? 'abre hacia arriba' : 'abre hacia abajo';
+      props.tipo        = 'Valor Absoluto';
+      props.formula     = MATH.fmtAbs(a, h, k);
+      props.explain     = `Función de valor absoluto con vértice en (${h}, ${k}). ${props.apertura}. El parámetro a=${a} determina la inclinación de las ramas.`;
+    }
+    return props;
+  },
+
+  /** Formatea la ecuación de la función TRASLADADA al origen (x0,y0) */
+  fmtShot(type, params, x0, y0) {
+    const {m=1,b=0,a=1,h=0,k=0} = params;
+    // La función global es y = y0 + f(x - x0)
+    // Mostramos de forma pedagógica
+    const ox = x0 !== 0 ? (x0>0?`(x−${x0})`:`(x+${Math.abs(x0)})`) : 'x';
+    const oy = y0 !== 0 ? (y0>0?`+ ${y0}`:` ${y0}`) : '';
+    if (type === 'linear') {
+      const inner = m!==1?`${m}·${ox}`:ox;
+      const bterm = b!==0?(b>0?`+ ${b}`:` ${b}`):'';
+      return `y = ${oy !== '' ? y0 + ' + ':''} ${m!==0?inner:''}${bterm}`;
+    }
+    if (type === 'quad') {
+      const hterm = h!==0?(h>0?`(${ox}−${h})`:`(${ox}+${Math.abs(h)})`):ox;
+      const kterm = k!==0?(k>0?`+ ${k}`:` ${k}`):'';
+      return `y = ${y0}  ${a!==1?a:''}(${hterm})² ${kterm}`;
+    }
+    if (type === 'abs') {
+      const hterm = h!==0?(h>0?`${ox}−${h}`:`${ox}+${Math.abs(h)}`):ox;
+      const kterm = k!==0?(k>0?`+ ${k}`:` ${k}`):'';
+      return `y = ${y0}  ${a!==1?a:''}|${hterm}| ${kterm}`;
+    }
+    return '';
+  },
+
+  fmtLinear(m,b){ return `f(t) = ${m!==1?m:''}t ${b!==0?(b>0?'+ '+b:'− '+Math.abs(b)):''}`.trim(); },
+  fmtQuad(a,h,k){
+    const ht = h!==0?(h>0?`t−${h}`:`t+${Math.abs(h)}`): 't';
+    const kt = k!==0?(k>0?`+ ${k}`:`− ${Math.abs(k)}`):'';
+    return `f(t) = ${a!==1?a:''}(${ht})² ${kt}`.trim();
+  },
+  fmtAbs(a,h,k){
+    const ht = h!==0?(h>0?`t−${h}`:`t+${Math.abs(h)}`): 't';
+    const kt = k!==0?(k>0?`+ ${k}`:`− ${Math.abs(k)}`):'';
+    return `f(t) = ${a!==1?a:''}|${ht}| ${kt}`.trim();
+  },
+};
+
+/* ══ DRAW — Renderizado del canvas ══ */
+const canvas = document.getElementById('game-canvas');
+const ctx    = canvas.getContext('2d');
+
+const DRAW = {
+  scale: 1,      // px por unidad
+  offsetX: 0,    // px del origen (0,0) desde la izquierda del canvas
+  offsetY: 0,
+
+  /** Ajusta tamaño del canvas al contenedor */
+  resize() {
+    const wrap = document.getElementById('canvas-wrap');
+    canvas.width  = wrap.clientWidth;
+    canvas.height = wrap.clientHeight;
+    // Calcular escala para que el plano cartesiano quepa
+    const scaleX = canvas.width  / (CFG.xMax - CFG.xMin);
+    const scaleY = canvas.height / (CFG.yMax - CFG.yMin);
+    DRAW.scale   = Math.min(scaleX, scaleY);
+    DRAW.offsetX = canvas.width  / 2 - ((CFG.xMax + CFG.xMin) / 2) * DRAW.scale;
+    DRAW.offsetY = canvas.height / 2 + ((CFG.yMax + CFG.yMin) / 2) * DRAW.scale;
+  },
+
+  /** Convierte coordenada del plano → pixel */
+  toPixel(x, y) {
+    return {
+      px: DRAW.offsetX + x * DRAW.scale,
+      py: DRAW.offsetY - y * DRAW.scale,
+    };
+  },
+
+  /** Convierte pixel → coordenada del plano */
+  toWorld(px, py) {
+    return {
+      x: (px - DRAW.offsetX) / DRAW.scale,
+      y: (DRAW.offsetY - py) / DRAW.scale,
+    };
+  },
+
+  /** Dibuja todo el frame */
+  frame(shotHistory, previewShot) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    DRAW.drawBackground();
+    if (CFG.showGrid) DRAW.drawGrid();
+    DRAW.drawAxes();
+    DRAW.drawShotHistory(shotHistory);
+    if (previewShot && CFG.showPreview) DRAW.drawFunction(previewShot, 'rgba(255,255,255,0.25)', 1.5, true);
+    DRAW.drawPoints();
+  },
+
+  drawBackground() {
+    ctx.fillStyle = '#07080f';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Zonas de jugadores
+    const midPx = DRAW.toPixel(0, 0).px;
+    const grad1 = ctx.createLinearGradient(0, 0, midPx, 0);
+    grad1.addColorStop(0, 'rgba(0,100,200,0.04)');
+    grad1.addColorStop(1, 'rgba(0,100,200,0)');
+    ctx.fillStyle = grad1;
+    ctx.fillRect(0, 0, midPx, canvas.height);
+    const grad2 = ctx.createLinearGradient(midPx, 0, canvas.width, 0);
+    grad2.addColorStop(0, 'rgba(200,0,60,0)');
+    grad2.addColorStop(1, 'rgba(200,0,60,0.04)');
+    ctx.fillStyle = grad2;
+    ctx.fillRect(midPx, 0, canvas.width - midPx, canvas.height);
+  },
+
+  drawGrid() {
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth   = 1;
+    for (let x = Math.ceil(CFG.xMin); x <= CFG.xMax; x++) {
+      const {px} = DRAW.toPixel(x, 0);
+      ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, canvas.height); ctx.stroke();
+    }
+    for (let y = Math.ceil(CFG.yMin); y <= CFG.yMax; y++) {
+      const {py} = DRAW.toPixel(0, y);
+      ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(canvas.width, py); ctx.stroke();
+    }
+  },
+
+  drawAxes() {
+    const {px: ox, py: oy} = DRAW.toPixel(0, 0);
+    ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+    ctx.lineWidth   = 1.5;
+    // Eje X
+    ctx.beginPath(); ctx.moveTo(0, oy); ctx.lineTo(canvas.width, oy); ctx.stroke();
+    // Eje Y
+    ctx.beginPath(); ctx.moveTo(ox, 0); ctx.lineTo(ox, canvas.height); ctx.stroke();
+    // Etiquetas
+    ctx.fillStyle   = 'rgba(255,255,255,0.3)';
+    ctx.font        = `${Math.max(9, DRAW.scale*0.4)}px Orbitron, monospace`;
+    ctx.textAlign   = 'center';
+    ctx.textBaseline= 'top';
+    for (let x = Math.ceil(CFG.xMin); x <= CFG.xMax; x++) {
+      if (x === 0) continue;
+      const {px, py} = DRAW.toPixel(x, 0);
+      ctx.fillText(x, px, py + 4);
+    }
+    ctx.textAlign   = 'right';
+    ctx.textBaseline= 'middle';
+    for (let y = Math.ceil(CFG.yMin); y <= CFG.yMax; y++) {
+      if (y === 0) continue;
+      const {px, py} = DRAW.toPixel(0, y);
+      ctx.fillText(y, px - 4, py);
+    }
+    // Flechas
+    const as = 7;
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath(); ctx.moveTo(canvas.width - as, oy - as/2); ctx.lineTo(canvas.width, oy); ctx.lineTo(canvas.width - as, oy + as/2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ox - as/2, as); ctx.lineTo(ox, 0); ctx.lineTo(ox + as/2, as); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font=`${Math.max(10,DRAW.scale*0.45)}px Orbitron`;
+    ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText('x', canvas.width - as + 4, oy);
+    ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillText('y', ox, as - 2);
+  },
+
+  drawShotHistory(shots) {
+    shots.forEach(shot => {
+      const color = shot.player === 1 ? 'rgba(0,170,255,0.55)' : 'rgba(255,51,85,0.55)';
+      const glow  = shot.player === 1 ? 'rgba(0,170,255,0.3)'  : 'rgba(255,51,85,0.3)';
+      DRAW.drawFunction(shot, color, 2, false, glow);
+    });
+  },
+
+  /**
+   * Dibuja una función en el canvas.
+   * @param {Object} shot  {fn, x0, y0}
+   * @param {string} color
+   * @param {number} lw    lineWidth
+   * @param {boolean} dashed
+   * @param {string} glow
+   */
+  drawFunction(shot, color, lw=2, dashed=false, glow='') {
+    const pts = MATH.sampleShot(shot);
+    ctx.save();
+    // Clip al área del plano
+    const tl = DRAW.toPixel(CFG.xMin, CFG.yMax);
+    const br = DRAW.toPixel(CFG.xMax, CFG.yMin);
+    ctx.beginPath();
+    ctx.rect(tl.px, tl.py, br.px - tl.px, br.py - tl.py);
+    ctx.clip();
+
+    if (glow) { ctx.shadowColor = glow; ctx.shadowBlur = 14; }
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = lw;
+    ctx.lineJoin    = 'round';
+    ctx.lineCap     = 'round';
+    if (dashed) ctx.setLineDash([8, 5]);
+
+    ctx.beginPath();
+    let penDown = false;
+    pts.forEach(pt => {
+      if (!pt) { penDown = false; return; }
+      const {px, py} = DRAW.toPixel(pt.x, pt.y);
+      if (!penDown) { ctx.moveTo(px, py); penDown = true; }
+      else          ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+    ctx.restore();
+  },
+
+  drawPoints() {
+    [1, 2].forEach(p => {
+      STATE.points[p].forEach(pt => {
+        if (!pt.alive) return;
+        const {px, py} = DRAW.toPixel(pt.x, pt.y);
+        const color    = p === 1 ? '#00aaff' : '#ff3355';
+        const glow     = p === 1 ? 'rgba(0,170,255,0.6)' : 'rgba(255,51,85,0.6)';
+        // Radio de impacto
+        ctx.save();
+        ctx.strokeStyle = p===1?'rgba(0,170,255,0.12)':'rgba(255,51,85,0.12)';
+        ctx.lineWidth   = 1;
+        ctx.setLineDash([3,3]);
+        ctx.beginPath();
+        ctx.arc(px, py, CFG.impactRadius * DRAW.scale, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.restore();
+        // Punto
+        ctx.save();
+        ctx.shadowColor = glow; ctx.shadowBlur = 16;
+        ctx.fillStyle   = color;
+        ctx.beginPath();
+        ctx.arc(px, py, 7, 0, Math.PI*2);
+        ctx.fill();
+        // Borde blanco
+        ctx.shadowBlur  = 0;
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth   = 1.5;
+        ctx.stroke();
+        // Coordenadas
+        ctx.fillStyle   = 'rgba(255,255,255,0.7)';
+        ctx.font        = `${Math.max(8,DRAW.scale*0.35)}px Orbitron, monospace`;
+        ctx.textAlign   = 'center';
+        ctx.textBaseline= 'bottom';
+        ctx.fillText(`(${pt.x.toFixed(1)},${pt.y.toFixed(1)})`, px, py - 10);
+        ctx.restore();
+      });
+    });
+    // Puntos eliminados (animación fade)
+    [1,2].forEach(p => {
+      STATE.points[p].forEach(pt => {
+        if (pt.alive || !pt.elimAnim || pt.elimAnim <= 0) return;
+        const {px, py} = DRAW.toPixel(pt.x, pt.y);
+        const r = pt.elimAnim;
+        ctx.save();
+        ctx.globalAlpha = r / 30;
+        ctx.strokeStyle = p===1?'#00aaff':'#ff3355';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(px, py, (30 - r) * 0.8, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.restore();
+        pt.elimAnim--;
+      });
+    });
+  },
+};
+
+/* ══ PLACE — Posicionamiento manual ══ */
+const placeCanvas  = document.getElementById('place-canvas');
+const placeCtx     = placeCanvas.getContext('2d');
+let   placeState   = { player:1, placed:[], done:false };
+
+const PLACE = {
+  resize() {
+    const wrap = document.getElementById('place-canvas-wrap');
+    placeCanvas.width  = wrap.clientWidth;
+    placeCanvas.height = wrap.clientHeight;
+    PLACE.draw();
+  },
+
+  start() {
+    placeState = { player:1, placed:{ 1:[], 2:[] }, done:false };
+    PLACE.updateUI();
+    PLACE.resize();
+    show('screen-place');
+    document.getElementById('place-canvas').addEventListener('pointerdown', PLACE.onTap);
+  },
+
+  onTap(e) {
+    e.preventDefault();
+    const rect  = placeCanvas.getBoundingClientRect();
+    const px    = e.clientX - rect.left;
+    const py    = e.clientY - rect.top;
+    // Escala del plano de colocación (misma que el juego)
+    const scaleX = placeCanvas.width  / (CFG.xMax - CFG.xMin);
+    const scaleY = placeCanvas.height / (CFG.yMax - CFG.yMin);
+    const scale  = Math.min(scaleX, scaleY);
+    const offX   = placeCanvas.width  / 2 - ((CFG.xMax+CFG.xMin)/2)*scale;
+    const offY   = placeCanvas.height / 2 + ((CFG.yMax+CFG.yMin)/2)*scale;
+    const wx = (px - offX) / scale;
+    const wy = (offY - py) / scale;
+
+    // Restricción de zona: J1 → x<0, J2 → x>0
+    const p = placeState.player;
+    if (p===1 && wx > -0.5) return;
+    if (p===2 && wx < 0.5)  return;
+    if (wx < CFG.xMin || wx > CFG.xMax || wy < CFG.yMin || wy > CFG.yMax) return;
+
+    // No superposición
+    const allPts = [...placeState.placed[1]||[], ...placeState.placed[2]||[]];
+    for (const pt of allPts) {
+      if (Math.sqrt((pt.x-wx)**2+(pt.y-wy)**2) < 1.2) return;
+    }
+    if (!placeState.placed[p]) placeState.placed[p] = [];
+    if (placeState.placed[p].length >= CFG.pointsPerPlayer) return;
+    placeState.placed[p].push({x: Math.round(wx*2)/2, y: Math.round(wy*2)/2, alive:true});
+    PLACE.updateUI();
+    PLACE.draw();
+  },
+
+  updateUI() {
+    const p    = placeState.player;
+    const n    = (placeState.placed[p]||[]).length;
+    const done = n >= CFG.pointsPerPlayer;
+    const pEl  = document.getElementById('place-title');
+    const iEl  = document.getElementById('place-info');
+    const cEl  = document.getElementById('place-count');
+    pEl.textContent = p===1 ? 'JUGADOR AZUL — Coloca tus puntos' : 'JUGADOR ROJO — Coloca tus puntos';
+    pEl.style.color = p===1 ? 'var(--blue)' : 'var(--red)';
+    iEl.textContent = p===1 ? 'Zona izquierda (x < 0)' : 'Zona derecha (x > 0)';
+    cEl.textContent = `${n}/${CFG.pointsPerPlayer}`;
+    const nextBtn = document.getElementById('place-next');
+    nextBtn.disabled  = !done;
+    nextBtn.style.opacity = done ? '1' : '.4';
+    nextBtn.textContent   = p===1 ? 'SIGUIENTE →' : '¡LISTO! ▶';
+  },
+
+  undo() {
+    const p = placeState.player;
+    if (placeState.placed[p]?.length > 0) {
+      placeState.placed[p].pop();
+      PLACE.updateUI();
+      PLACE.draw();
+    }
+  },
+
+  next() {
+    if (placeState.player === 1) {
+      placeState.player = 2;
+      PLACE.updateUI();
+      PLACE.draw();
+    } else {
+      // Ambos listos → usar puntos colocados
+      STATE.points[1] = placeState.placed[1].map(p=>({...p}));
+      STATE.points[2] = placeState.placed[2].map(p=>({...p}));
+      placeCanvas.removeEventListener('pointerdown', PLACE.onTap);
+      GAME.startCountdown();
+    }
+  },
+
+  draw() {
+    const w = placeCanvas.width, h = placeCanvas.height;
+    const scaleX = w / (CFG.xMax-CFG.xMin);
+    const scaleY = h / (CFG.yMax-CFG.yMin);
+    const sc = Math.min(scaleX,scaleY);
+    const ox = w/2 - ((CFG.xMax+CFG.xMin)/2)*sc;
+    const oy = h/2 + ((CFG.yMax+CFG.yMin)/2)*sc;
+    const tp = (x,y)=>({px:ox+x*sc, py:oy-y*sc});
+
+    placeCtx.clearRect(0,0,w,h);
+    placeCtx.fillStyle='#07080f'; placeCtx.fillRect(0,0,w,h);
+
+    // Zona izquierda / derecha
+    const {px:midPx} = tp(0,0);
+    placeCtx.fillStyle='rgba(0,100,200,0.05)'; placeCtx.fillRect(0,0,midPx,h);
+    placeCtx.fillStyle='rgba(200,0,60,0.05)';  placeCtx.fillRect(midPx,0,w-midPx,h);
+    // Borde de zona actual
+    const p = placeState.player;
+    placeCtx.strokeStyle = p===1?'rgba(0,170,255,0.2)':'rgba(255,51,85,0.2)';
+    placeCtx.lineWidth=2; placeCtx.setLineDash([6,4]);
+    if(p===1) placeCtx.strokeRect(1,1,midPx-2,h-2);
+    else      placeCtx.strokeRect(midPx+1,1,w-midPx-2,h-2);
+    placeCtx.setLineDash([]);
+    // Grid
+    placeCtx.strokeStyle='rgba(255,255,255,0.04)'; placeCtx.lineWidth=1;
+    for(let x=Math.ceil(CFG.xMin);x<=CFG.xMax;x++){const {px}=tp(x,0);placeCtx.beginPath();placeCtx.moveTo(px,0);placeCtx.lineTo(px,h);placeCtx.stroke();}
+    for(let y=Math.ceil(CFG.yMin);y<=CFG.yMax;y++){const {py}=tp(0,y);placeCtx.beginPath();placeCtx.moveTo(0,py);placeCtx.lineTo(w,py);placeCtx.stroke();}
+    // Ejes
+    const {px:ax,py:ay}=tp(0,0);
+    placeCtx.strokeStyle='rgba(255,255,255,0.2)'; placeCtx.lineWidth=1.5;
+    placeCtx.beginPath();placeCtx.moveTo(0,ay);placeCtx.lineTo(w,ay);placeCtx.stroke();
+    placeCtx.beginPath();placeCtx.moveTo(ax,0);placeCtx.lineTo(ax,h);placeCtx.stroke();
+    // Puntos colocados
+    [1,2].forEach(pp=>{
+      (placeState.placed[pp]||[]).forEach(pt=>{
+        const {px,py}=tp(pt.x,pt.y);
+        placeCtx.save();
+        placeCtx.shadowColor=pp===1?'rgba(0,170,255,0.6)':'rgba(255,51,85,0.6)';
+        placeCtx.shadowBlur=12;
+        placeCtx.fillStyle=pp===1?'#00aaff':'#ff3355';
+        placeCtx.beginPath(); placeCtx.arc(px,py,7,0,Math.PI*2); placeCtx.fill();
+        placeCtx.strokeStyle='rgba(255,255,255,0.5)'; placeCtx.lineWidth=1.5; placeCtx.stroke();
+        placeCtx.restore();
+        placeCtx.fillStyle='rgba(255,255,255,0.6)';
+        placeCtx.font=`${Math.max(8,sc*0.35)}px Orbitron,monospace`;
+        placeCtx.textAlign='center'; placeCtx.textBaseline='bottom';
+        placeCtx.fillText(`(${pt.x},${pt.y})`,px,py-10);
+      });
+    });
+    // Etiqueta zona
+    placeCtx.fillStyle=p===1?'rgba(0,170,255,0.35)':'rgba(255,51,85,0.35)';
+    placeCtx.font=`${Math.max(10,sc*0.5)}px Orbitron,monospace`;
+    placeCtx.textAlign='center'; placeCtx.textBaseline='middle';
+    if(p===1) placeCtx.fillText('TU ZONA',midPx/2,h/2);
+    else      placeCtx.fillText('TU ZONA',(midPx+w)/2,h/2);
+  },
+};
+
+/* ══ BUILD — Constructor de función ══ */
+const FN_DEFS = {
+  linear: {
+    name:'Lineal',
+    params:[
+      {id:'m', label:'m  (pendiente)', min:-5, max:5, step:0.5, default:1},
+      {id:'b', label:'b  (término independiente)', min:-8, max:8, step:0.5, default:0},
+    ],
+    fn: p => t => p.m * t + p.b,
+    formula: p => MATH.fmtLinear(p.m, p.b),
+  },
+  quad: {
+    name:'Cuadrática',
+    params:[
+      {id:'a', label:'a  (concavidad/apertura)', min:-3, max:3, step:0.5, default:1},
+      {id:'h', label:'h  (desplazamiento horizontal)', min:-5, max:5, step:0.5, default:0},
+      {id:'k', label:'k  (desplazamiento vertical)', min:-5, max:5, step:0.5, default:0},
+    ],
+    fn: p => t => p.a * (t - p.h)**2 + p.k,
+    formula: p => MATH.fmtQuad(p.a, p.h, p.k),
+  },
+  abs: {
+    name:'Valor Absoluto',
+    params:[
+      {id:'a', label:'a  (inclinación)', min:-4, max:4, step:0.5, default:1},
+      {id:'h', label:'h  (vértice horizontal)', min:-5, max:5, step:0.5, default:0},
+      {id:'k', label:'k  (vértice vertical)', min:-5, max:5, step:0.5, default:0},
+    ],
+    fn: p => t => p.a * Math.abs(t - p.h) + p.k,
+    formula: p => MATH.fmtAbs(p.a, p.h, p.k),
+  },
+};
+
+const BUILD = {
+  state: {
+    1: { type:'linear', params:{ m:1,b:0,a:1,h:0,k:0 } },
+    2: { type:'linear', params:{ m:1,b:0,a:1,h:0,k:0 } },
+  },
+
+  /** Inicializa el constructor de función para un jugador */
+  init(p) {
+    const panel    = document.getElementById(`builder-p${p}`);
+    const selEl    = document.getElementById(`fn-sel-p${p}`);
+    const fmtEl    = document.getElementById(`formula-p${p}`);
+    const slidersEl= document.getElementById(`sliders-p${p}`);
+    const cls      = p===1 ? 'sel-p1' : 'sel-p2';
+
+    // Selector de tipo
+    selEl.innerHTML = '';
+    CFG.activeFns.forEach(type => {
+      const btn = document.createElement('div');
+      btn.className = 'fn-opt' + (BUILD.state[p].type===type ? ' '+cls : '');
+      btn.textContent = FN_DEFS[type].name;
+      btn.dataset.type = type;
+      btn.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        BUILD.setType(p, type);
+      });
+      selEl.appendChild(btn);
+    });
+    BUILD.renderSliders(p);
+    BUILD.updateFormula(p);
+  },
+
+  setType(p, type) {
+    BUILD.state[p].type = type;
+    // Reset params to defaults
+    const def = FN_DEFS[type];
+    def.params.forEach(pd => { BUILD.state[p].params[pd.id] = pd.default; });
+    BUILD.init(p);
+    BUILD.updatePreview(p);
+  },
+
+  renderSliders(p) {
+    const slidersEl = document.getElementById(`sliders-p${p}`);
+    const type      = BUILD.state[p].type;
+    const def       = FN_DEFS[type];
+    slidersEl.innerHTML = '';
+    def.params.forEach(pd => {
+      const row = document.createElement('div');
+      row.className = 'slider-row';
+      const lbl = document.createElement('div');
+      lbl.className = 'slider-lbl';
+      lbl.innerHTML = `<span style="color:var(--text-dim)">${pd.label}</span><span class="sv" id="sv-p${p}-${pd.id}">${BUILD.state[p].params[pd.id]}</span>`;
+      const inp = document.createElement('input');
+      inp.type  = 'range';
+      inp.min   = pd.min; inp.max = pd.max; inp.step = pd.step;
+      inp.value = BUILD.state[p].params[pd.id];
+      inp.addEventListener('input', () => {
+        const v = parseFloat(inp.value);
+        BUILD.state[p].params[pd.id] = v;
+        document.getElementById(`sv-p${p}-${pd.id}`).textContent = v;
+        BUILD.updateFormula(p);
+        BUILD.updatePreview(p);
+      });
+      row.appendChild(lbl);
+      row.appendChild(inp);
+      slidersEl.appendChild(row);
+    });
+  },
+
+  updateFormula(p) {
+    const {type, params} = BUILD.state[p];
+    const fmtEl = document.getElementById(`formula-p${p}`);
+    fmtEl.textContent = FN_DEFS[type].formula(params);
+  },
+
+  /** Devuelve el objeto disparo del constructor actual */
+  getShot(p) {
+    const {type, params} = BUILD.state[p];
+    const origin = GAME.getActivePoint(p);
+    if (!origin) return null;
+    return {
+      fn:     FN_DEFS[type].fn(params),
+      x0:     origin.x,
+      y0:     origin.y,
+      type,
+      params: {...params},
+      player: p,
+    };
+  },
+
+  updatePreview(p) {
+    if (p !== STATE.turn) return;
+    STATE.preview = { active: true, player: p, shot: BUILD.getShot(p) };
+  },
+};
+
+/* ══ AUDIO ══ */
+let _ac=null;
+function ac(){return _ac||(_ac=new(window.AudioContext||window.webkitAudioContext)());}
+function tone(f,type,dur,vol=0.25){
+  try{const ctx2=ac(),o=ctx2.createOscillator(),g=ctx2.createGain();
+    o.connect(g);g.connect(ctx2.destination);o.type=type;o.frequency.value=f;
+    g.gain.setValueAtTime(vol,ctx2.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx2.currentTime+dur);
+    o.start();o.stop(ctx2.currentTime+dur);}catch(e){}
+}
+const sndFire = ()=>{tone(200,'sawtooth',.06,.3);setTimeout(()=>tone(150,'sawtooth',.1,.2),60);};
+const sndHit  = ()=>{[523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.2),i*60));};
+const sndMiss = ()=>tone(180,'sawtooth',.14,.2);
+const sndElim = ()=>[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.28),i*70));
+const sndWin  = ()=>[523,659,784,880,1047].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.3),i*80));
+
+/* ══ PEDAGOGY — Feedback educativo ══ */
+const PEDAGOGY = {
+  show(shot, hitTargets) {
+    STATE.phase = 'feedback';
+    const props  = MATH.analyze({type:shot.type, ...shot.params});
+    const box    = document.getElementById('feedback-box');
+    const icon   = document.getElementById('fb-icon');
+    const title  = document.getElementById('fb-title');
+    const fmEl   = document.getElementById('fb-formula');
+    const prEl   = document.getElementById('fb-props');
+    const exEl   = document.getElementById('fb-explain');
+
+    const hit = hitTargets.length > 0;
+    const elim= hitTargets.some(t=>!t.alive);
+
+    box.className  = 'feedback-box ' + (elim?'fb-elim':hit?'fb-hit':'fb-miss');
+    icon.textContent= elim?'💥':hit?'🎯':'📐';
+    title.textContent= elim?'¡IMPACTO ELIMINATORIO!':hit?'¡IMPACTO!':'DISPARO ANALIZADO';
+
+    // Fórmula global del disparo
+    const ap   = GAME.getActivePoint(shot.player);
+    fmEl.textContent = MATH.fmtShot(shot.type, shot.params, ap.x, ap.y);
+
+    // Propiedades
+    prEl.innerHTML = '';
+    const propItems = [];
+    if (props.tipo)        propItems.push({l:'Tipo', v:props.tipo});
+    if (props.pendiente !== undefined) propItems.push({l:'Pendiente (m)', v:props.pendiente});
+    if (props.interceptoY !== undefined) propItems.push({l:'Intercepto Y', v:props.interceptoY});
+    if (props.vertice)     propItems.push({l:'Vértice', v:`(${props.vertice.x}, ${props.vertice.y})`});
+    if (props.concavidad)  propItems.push({l:'Concavidad', v:props.concavidad});
+    if (props.apertura)    propItems.push({l:'Apertura', v:props.apertura});
+    if (props.creciente !== undefined) propItems.push({l:'Comportamiento', v:props.creciente?'Creciente ↗':'Decreciente ↘'});
+    propItems.forEach(pi=>{
+      prEl.innerHTML += `<div class="fb-item"><div class="fb-item-lbl">${pi.l}</div><div class="fb-item-val">${pi.v}</div></div>`;
+    });
+
+    exEl.textContent = props.explain || '';
+
+    const overlay = document.getElementById('feedback-overlay');
+    overlay.classList.add('show');
+    overlay.addEventListener('pointerdown', PEDAGOGY.close, {once:true});
+  },
+
+  close() {
+    document.getElementById('feedback-overlay').classList.remove('show');
+    STATE.phase = 'idle';
+    GAME.nextTurn();
+  },
+};
+
+/* ══ GAME — Lógica principal ══ */
+const GAME = {
+  /** Devuelve el primer punto vivo del jugador (punto activo del turno) */
+  getActivePoint(p) {
+    return STATE.points[p].find(pt => pt.alive) || null;
+  },
+
+  /** Posiciona puntos aleatoriamente en zonas seguras */
+  placeRandom() {
+    const place = (p) => {
+      const xSign = p === 1 ? -1 : 1;
+      const pts   = [];
+      let attempts = 0;
+      while (pts.length < CFG.pointsPerPlayer && attempts < 200) {
+        attempts++;
+        const x = xSign * (1 + Math.random() * (CFG.xMax - 1.5));
+        const y = CFG.yMin + 1 + Math.random() * (CFG.yMax - CFG.yMin - 2);
+        const rx = Math.round(x * 2) / 2;
+        const ry = Math.round(y * 2) / 2;
+        // Sin superposición con los ya colocados
+        const conflict = [...pts, ...STATE.points[p===1?2:1]].some(
+          pt => Math.sqrt((pt.x-rx)**2+(pt.y-ry)**2) < 1.5
+        );
+        if (!conflict) pts.push({x:rx, y:ry, alive:true});
+      }
+      STATE.points[p] = pts;
+    };
+    STATE.points[1] = [];
+    STATE.points[2] = [];
+    place(1);
+    place(2);
+  },
+
+  start() {
+    STATE.turn       = 1;
+    STATE.turnCount  = 1;
+    STATE.shots      = [];
+    STATE.phase      = 'idle';
+    STATE.preview    = {active:false};
+
+    if (CFG.placement === 'random') {
+      GAME.placeRandom();
+      GAME.startCountdown();
+    } else {
+      PLACE.start();
+    }
+  },
+
+  startCountdown() {
+    show('screen-countdown');
+    const nE=document.getElementById('cd-number'),gE=document.getElementById('cd-go'),lE=document.getElementById('cd-label');
+    const steps=[{n:'3',color:'var(--blue)',glow:'rgba(0,170,255,.5)',label:'SINCRONIZANDO PLANO'},{n:'2',color:'var(--gold)',glow:'rgba(255,215,0,.5)',label:'CARGANDO FUNCIONES'},{n:'1',color:'var(--red)',glow:'rgba(255,51,85,.5)',label:'¡PREPÁRENSE!'}];
+    function reA(el){el.style.animation='none';void el.offsetWidth;el.style.animation='';}
+    let i=0;
+    function tick(){
+      if(i>=steps.length){nE.style.display='none';lE.style.display='none';gE.style.display='block';reA(gE);tone(1047,'sine',.4,.4);setTimeout(()=>GAME.enterGame(),800);return;}
+      const s=steps[i];nE.style.display='block';gE.style.display='none';lE.style.display='block';
+      nE.textContent=s.n;nE.style.color=s.color;nE.style.textShadow=`0 0 50px ${s.glow}`;
+      reA(nE);lE.textContent=s.label;reA(lE);
+      tone([392,440,523][i],'sine',.18,.3);i++;setTimeout(tick,950);
+    }
+    tick();
+  },
+
+  enterGame() {
+    show('screen-game');
+    DRAW.resize();
+    BUILD.init(1);
+    BUILD.init(2);
+    UI.updateHPBars();
+    UI.setTurn(1);
+    GAME.renderLoop();
+  },
+
+  renderLoop() {
+    const previewShot = (STATE.preview.active && CFG.showPreview) ? STATE.preview.shot : null;
+    DRAW.frame(STATE.shots, previewShot);
+    // Animaciones de eliminación
+    const needsLoop = [1,2].some(p=>STATE.points[p].some(pt=>pt.elimAnim>0));
+    STATE.animFrame = requestAnimationFrame(()=>GAME.renderLoop());
+  },
+
+  /** Ejecuta el disparo del jugador activo */
+  fire(p) {
+    if (STATE.phase !== 'idle' || STATE.turn !== p) return;
+    const shot = BUILD.getShot(p);
+    if (!shot) return;
+    STATE.phase = 'firing';
+    sndFire();
+
+    // Registrar en historial
+    STATE.shots.push(shot);
+
+    // Evaluar impactos en puntos del rival
+    const enemy   = p === 1 ? 2 : 1;
+    const hitTargets = [];
+    STATE.points[enemy].forEach(pt => {
+      if (!pt.alive) return;
+      if (MATH.checkImpact(shot, pt, CFG.impactRadius)) {
+        hitTargets.push(pt);
+        pt.alive    = false;
+        pt.elimAnim = 30; // frames de animación
+        sndHit();
+        setTimeout(sndElim, 300);
+      }
+    });
+    if (hitTargets.length === 0) sndMiss();
+
+    // Guardar en historial legible
+    const origin = GAME.getActivePoint(p);
+    shot._hit     = hitTargets.length > 0;
+    shot._formula = MATH.fmtShot(shot.type, shot.params, origin?.x??0, origin?.y??0);
+    shot._turnNum = STATE.turnCount;
+
+    UI.updateHPBars();
+
+    // ¿Victoria?
+    const aliveEnemy = STATE.points[enemy].filter(pt=>pt.alive).length;
+    if (aliveEnemy === 0) {
+      setTimeout(()=>GAME.endGame(p), 800);
+      return;
+    }
+    // ¿Límite de turnos?
+    if (CFG.maxTurns > 0 && STATE.turnCount >= CFG.maxTurns * 2) {
+      setTimeout(()=>GAME.endGame(null), 800);
+      return;
+    }
+
+    // Feedback pedagógico
+    setTimeout(()=>PEDAGOGY.show(shot, hitTargets), 400);
+  },
+
+  nextTurn() {
+    STATE.turn      = STATE.turn === 1 ? 2 : 1;
+    STATE.turnCount++;
+    STATE.preview   = {active:false};
+    document.getElementById('turn-counter').textContent = `Turno ${Math.ceil(STATE.turnCount/2)}`;
+    UI.setTurn(STATE.turn);
+    BUILD.updatePreview(STATE.turn);
+  },
+
+  endGame(winner) {
+    cancelAnimationFrame(STATE.animFrame);
+    DRAW.frame(STATE.shots, null);
+
+    // Glow
+    const gEl = document.getElementById('end-glow');
+    gEl.className = winner===1?'end-glow-p1':'end-glow-p2';
+    gEl.style.display = '';
+
+    const lbl = document.getElementById('end-lbl');
+    const win = document.getElementById('end-winner');
+    if (winner) {
+      lbl.textContent = '🏆 GANADOR';
+      win.textContent = winner===1?'🔵 AZUL':'🔴 ROJO';
+      win.className   = 'end-winner ' + (winner===1?'p1':'p2');
+    } else {
+      lbl.textContent = '⏱ FIN DE TURNOS';
+      const a1 = STATE.points[1].filter(p=>p.alive).length;
+      const a2 = STATE.points[2].filter(p=>p.alive).length;
+      win.textContent = a1>a2?'🔵 AZUL':a2>a1?'🔴 ROJO':'EMPATE';
+      win.className   = 'end-winner ' + (a1>a2?'p1':a2>a1?'p2':'');
+    }
+
+    // Stats
+    const shots1 = STATE.shots.filter(s=>s.player===1);
+    const shots2 = STATE.shots.filter(s=>s.player===2);
+    const hits1  = shots1.filter(s=>s._hit).length;
+    const hits2  = shots2.filter(s=>s._hit).length;
+    document.getElementById('end-stats').innerHTML=`
+      <div class="end-stat"><div class="end-stat-val" style="color:var(--blue)">${shots1.length}</div><div class="end-stat-lbl">DISPAROS AZUL</div></div>
+      <div class="end-stat"><div class="end-stat-val" style="color:var(--red)">${shots2.length}</div><div class="end-stat-lbl">DISPAROS ROJO</div></div>
+      <div class="end-stat"><div class="end-stat-val">${hits1+hits2}</div><div class="end-stat-lbl">TOTAL IMPACTOS</div></div>
+    `;
+
+    // Historial
+    const histEl = document.getElementById('hist-list');
+    histEl.innerHTML = STATE.shots.map(s=>`
+      <div class="hist-item">
+        <div class="hist-dot ${s.player===1?'p1':'p2'}"></div>
+        <span style="font-family:var(--fd);font-size:9px;color:var(--text-dim);min-width:28px">T${s._turnNum}</span>
+        <span class="hist-fn">${s._formula}</span>
+        <span class="hist-result ${s._hit?'hit':'miss'}">${s._hit?'⚡ IMPACTO':'✗ FALLO'}</span>
+      </div>
+    `).join('');
+
+    sndWin();
+    setTimeout(()=>show('screen-end'), 600);
+  },
+};
+
+/* ══ UI ══ */
+const UI = {
+  setTurn(p) {
+    const badge = document.getElementById('turn-badge');
+    badge.textContent = `TURNO: ${p===1?'AZUL':'ROJO'}`;
+    badge.className   = `turn-badge p${p}`;
+
+    // Paneles activo / inactivo
+    document.getElementById('builder-p1').classList.toggle('disabled', p !== 1);
+    document.getElementById('builder-p2').classList.toggle('disabled', p !== 2);
+    document.getElementById('fire-p1').classList.toggle('disabled', p !== 1);
+    document.getElementById('fire-p2').classList.toggle('disabled', p !== 2);
+
+    document.getElementById('ind-p1').textContent = p===1 ? '◉ TU TURNO' : '◎ ESPERA';
+    document.getElementById('ind-p1').className   = `active-indicator ${p===1?'on':'off'}`;
+    document.getElementById('ind-p2').textContent = p===2 ? '◉ TU TURNO' : '◎ ESPERA';
+    document.getElementById('ind-p2').className   = `active-indicator ${p===2?'on':'off'}`;
+  },
+
+  updateHPBars() {
+    [1,2].forEach(p=>{
+      const el  = document.getElementById(`hp-p${p}`);
+      el.innerHTML = '';
+      const total = CFG.pointsPerPlayer;
+      const alive = STATE.points[p].filter(pt=>pt.alive).length;
+      for (let i=0;i<total;i++){
+        const d = document.createElement('div');
+        d.className = `hp-dot ${i < alive ? `alive-p${p}` : 'dead'}`;
+        el.appendChild(d);
+      }
+    });
+  },
+};
+
+/* ══ EVENT LISTENERS ══ */
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+// Menú
+document.getElementById('btn-play').onclick   = ()=>GAME.start();
+document.getElementById('btn-config').onclick  = ()=>show('screen-config');
+document.getElementById('cfg-back').onclick    = ()=>show('screen-menu');
+document.getElementById('cfg-start').onclick   = ()=>GAME.start();
+document.getElementById('g-menu-btn').onclick  = ()=>{cancelAnimationFrame(STATE.animFrame);show('screen-menu');};
+document.getElementById('end-replay').onclick  = ()=>GAME.start();
+document.getElementById('end-menu').onclick    = ()=>show('screen-menu');
+
+// Disparos
+document.getElementById('fire-p1').addEventListener('pointerdown', e=>{e.preventDefault();GAME.fire(1);});
+document.getElementById('fire-p2').addEventListener('pointerdown', e=>{e.preventDefault();GAME.fire(2);});
+
+// Config — puntos
+let ptsV=CFG.pointsPerPlayer, turnsV=CFG.maxTurns, radV=CFG.impactRadius;
+document.getElementById('pts-inc').onclick=()=>{ptsV=Math.min(5,ptsV+1);CFG.pointsPerPlayer=ptsV;document.getElementById('pts-val').textContent=ptsV;};
+document.getElementById('pts-dec').onclick=()=>{ptsV=Math.max(1,ptsV-1);CFG.pointsPerPlayer=ptsV;document.getElementById('pts-val').textContent=ptsV;};
+document.getElementById('turns-inc').onclick=()=>{turnsV=Math.min(20,turnsV+1);CFG.maxTurns=turnsV;document.getElementById('turns-val').textContent=turnsV;};
+document.getElementById('turns-dec').onclick=()=>{turnsV=Math.max(0,turnsV-1);CFG.maxTurns=turnsV;document.getElementById('turns-val').textContent=turnsV;};
+document.getElementById('rad-inc').onclick=()=>{radV=Math.min(3,Math.round((radV+0.25)*100)/100);CFG.impactRadius=radV;document.getElementById('rad-val').textContent=radV.toFixed(2);};
+document.getElementById('rad-dec').onclick=()=>{radV=Math.max(0.25,Math.round((radV-0.25)*100)/100);CFG.impactRadius=radV;document.getElementById('rad-val').textContent=radV.toFixed(2);};
+document.getElementById('tog-grid').onchange=e=>CFG.showGrid=e.target.checked;
+document.getElementById('tog-preview').onchange=e=>CFG.showPreview=e.target.checked;
+document.querySelectorAll('.place-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.place-btn').forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel'); CFG.placement=b.dataset.place;
+}));
+
+// Colocación manual
+document.getElementById('place-undo').onclick = ()=>PLACE.undo();
+document.getElementById('place-next').onclick  = ()=>PLACE.next();
+
+// Resize
+window.addEventListener('resize',()=>{
+  DRAW.resize();
+  PLACE.resize();
+});
+</script>
+</body>
+</html>

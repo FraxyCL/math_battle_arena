@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Carrera de Operaciones — Math Battle Arena</title>
+<style>
+/* ── Fuentes ── */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
+
+/* ══════════════════════════════════════
+   VARIABLES DE DISEÑO
+   (aquí viven todos los colores y fuentes)
+══════════════════════════════════════ */
+:root {
+  --blue:       #00aaff;
+  --blue-dark:  #0066cc;
+  --blue-glow:  rgba(0,170,255,0.35);
+  --red:        #ff3355;
+  --red-dark:   #cc0033;
+  --red-glow:   rgba(255,51,85,0.35);
+  --gold:       #ffd700;
+  --green:      #00ff66;
+  --green-dark: #00cc44;
+  --green-glow: rgba(0,255,100,0.3);
+  --bg:         #0a0a12;
+  --bg2:        #111120;
+  --bg3:        #1a1a2e;
+  --text:       #e8e8ff;
+  --text-dim:   #7878aa;
+  --border:     rgba(255,255,255,0.08);
+  --fd: 'Orbitron', monospace;
+  --fb: 'Rajdhani', sans-serif;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: var(--fb);
+  touch-action: manipulation;
+  user-select: none; -webkit-user-select: none;
+}
+
+/* ── Cuadrícula de fondo sutil ── */
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,170,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,170,255,0.025) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none; z-index: 0;
+}
+
+/* ══════════════════════════════════════
+   SISTEMA DE PANTALLAS
+   Cada "pantalla" ocupa todo el viewport.
+   Solo la que tiene .active es visible.
+══════════════════════════════════════ */
+.screen {
+  position: fixed; inset: 0; z-index: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+.screen.active { opacity: 1; pointer-events: all; }
+
+/* ══════════════════════════════════════
+   PANTALLA: MENÚ
+══════════════════════════════════════ */
+#screen-menu {
+  background:
+    radial-gradient(ellipse at 25% 50%, rgba(0,100,255,0.09) 0%, transparent 55%),
+    radial-gradient(ellipse at 75% 50%, rgba(255,0,80,0.09) 0%, transparent 55%);
+}
+
+.logo {
+  font-family: var(--fd); font-weight: 900;
+  font-size: clamp(28px, 5vw, 68px);
+  text-align: center; line-height: 1;
+  letter-spacing: 0.04em; margin-bottom: 4px;
+}
+.logo .b { color: var(--blue); text-shadow: 0 0 35px var(--blue-glow); }
+.logo .r { color: var(--red);  text-shadow: 0 0 35px var(--red-glow); }
+
+.logo-game {
+  font-family: var(--fd); font-size: clamp(13px, 1.8vw, 22px);
+  font-weight: 700; color: var(--text-dim);
+  letter-spacing: 0.15em; text-align: center; margin-bottom: 6px;
+}
+.logo-game span { color: var(--gold); }
+
+.logo-sub {
+  font-size: clamp(11px, 1.3vw, 15px);
+  letter-spacing: 0.3em; color: var(--text-dim);
+  text-align: center; text-transform: uppercase; margin-bottom: 44px;
+}
+
+.menu-btns { display: flex; flex-direction: column; gap: 12px; width: min(440px, 90vw); }
+
+/* Botón genérico */
+.btn {
+  height: 82px; border: none; cursor: pointer;
+  font-family: var(--fd); font-size: clamp(14px, 2vw, 20px);
+  font-weight: 700; letter-spacing: 0.08em; border-radius: 10px;
+  transition: all 0.18s ease; position: relative; overflow: hidden;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  display: flex; align-items: center; justify-content: center;
+}
+.btn::after { content:''; position:absolute; inset:0; background:rgba(255,255,255,0); transition:background .12s; }
+.btn:active::after { background: rgba(255,255,255,0.12); }
+
+/* Botón azul principal */
+.btn-primary {
+  background: linear-gradient(135deg, var(--blue-dark), var(--blue));
+  color: #fff;
+  box-shadow: 0 0 28px var(--blue-glow), 0 4px 18px rgba(0,0,0,0.5);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 45px var(--blue-glow), 0 8px 28px rgba(0,0,0,0.5); }
+
+/* Botón oscuro secundario */
+.btn-ghost {
+  background: var(--bg3); color: var(--text-dim); border: 1px solid var(--border);
+}
+.btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+.btn-sm { height: 52px !important; font-size: 13px !important; border-radius: 8px; letter-spacing: 0.1em; }
+
+/* Enlace volver al hub */
+.btn-back-hub {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 44px; border-radius: 8px;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-dim); font-family: var(--fd);
+  font-size: 11px; letter-spacing: 0.15em;
+  cursor: pointer; transition: all 0.15s;
+  text-decoration: none; margin-top: 8px;
+  touch-action: manipulation;
+}
+.btn-back-hub:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+/* ══════════════════════════════════════
+   PANTALLA: CONFIGURACIÓN
+══════════════════════════════════════ */
+#screen-config { padding: 16px; overflow-y: auto; justify-content: flex-start; padding-top: 28px; }
+
+.cfg-title {
+  font-family: var(--fd); font-size: clamp(16px, 2.2vw, 26px);
+  font-weight: 700; color: var(--gold); text-align: center;
+  letter-spacing: 0.1em; margin-bottom: 20px;
+  text-shadow: 0 0 18px rgba(255,215,0,0.3);
+}
+
+.cfg-panel {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 22px 26px;
+  width: min(620px, 95vw);
+  display: flex; flex-direction: column; gap: 22px;
+}
+
+.cfg-lbl {
+  font-family: var(--fd); font-size: 11px;
+  letter-spacing: 0.2em; color: var(--text-dim);
+  text-transform: uppercase; margin-bottom: 10px; display: block;
+}
+
+/* Botones de dificultad */
+.diff-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+
+.diff-btn {
+  height: 68px; border-radius: 8px;
+  border: 2px solid var(--border); background: var(--bg3);
+  color: var(--text-dim); font-family: var(--fd);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+  cursor: pointer; transition: all 0.18s; touch-action: manipulation;
+}
+.diff-btn:hover { border-color: var(--gold); color: var(--gold); }
+/* Botón seleccionado — borde y brillo dorado */
+.diff-btn.sel {
+  background: rgba(255,215,0,0.1); border-color: var(--gold);
+  color: var(--gold); box-shadow: 0 0 16px rgba(255,215,0,0.18);
+}
+
+.cfg-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.cfg-row > label { font-size: clamp(14px, 1.7vw, 18px); color: var(--text); font-weight: 600; }
+
+/* Control numérico (− número +) */
+.num-ctrl { display: flex; align-items: center; gap: 10px; }
+.nc-btn {
+  width: 52px; height: 52px; border-radius: 7px;
+  border: 1px solid var(--border); background: var(--bg3); color: var(--text);
+  font-size: 26px; font-family: var(--fd);
+  cursor: pointer; transition: all 0.14s; touch-action: manipulation;
+}
+.nc-btn:hover { border-color: var(--blue); color: var(--blue); }
+.nc-btn:active { background: rgba(0,170,255,0.1); }
+.nc-val { font-family: var(--fd); font-size: 28px; font-weight: 700; color: var(--blue); min-width: 52px; text-align: center; }
+
+/* Toggle on/off */
+.toggle { position: relative; width: 64px; height: 32px; }
+.toggle input { display: none; }
+.toggle-track {
+  position: absolute; inset: 0;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 16px; cursor: pointer; transition: all 0.28s;
+}
+.toggle-track::after {
+  content:''; position: absolute;
+  width: 22px; height: 22px; background: var(--text-dim);
+  border-radius: 50%; top: 4px; left: 4px; transition: all 0.28s;
+}
+.toggle input:checked + .toggle-track { background: rgba(0,170,255,0.18); border-color: var(--blue); }
+.toggle input:checked + .toggle-track::after { transform: translateX(32px); background: var(--blue); }
+
+.cfg-footer { display: flex; flex-direction: column; gap: 10px; width: min(620px, 95vw); margin-top: 14px; }
+
+/* ══════════════════════════════════════
+   PANTALLA: JUEGO
+   Grid de 3 columnas: azul | centro | rojo
+   más una fila superior de 52px (topbar)
+══════════════════════════════════════ */
+#screen-game { flex-direction: column; align-items: stretch; justify-content: stretch; padding: 0; }
+
+.game-wrap {
+  width: 100vw; height: 100vh;
+  display: grid;
+  grid-template-rows: 52px 1fr;       /* topbar + contenido */
+  grid-template-columns: 1fr 140px 1fr; /* azul | centro | rojo */
+  overflow: hidden;
+}
+
+/* ── Barra superior ── */
+.g-topbar {
+  grid-column: 1 / -1;   /* ocupa las 3 columnas */
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 0 14px; gap: 10px;
+}
+.g-topbar-info   { display: flex; align-items: center; gap: 14px; }
+.g-topbar-title  { font-family: var(--fd); font-size: 10px; letter-spacing: 0.2em; color: var(--text-dim); }
+.g-topbar-game   { font-family: var(--fd); font-size: 10px; letter-spacing: 0.15em; color: var(--gold); }
+
+/* Temporizador central */
+.g-timer {
+  font-family: var(--fd); font-size: 22px; font-weight: 700;
+  color: var(--gold); text-shadow: 0 0 10px rgba(255,215,0,0.35);
+  min-width: 60px; text-align: center;
+}
+.g-timer.urgent { color: var(--red); animation: blink-t 0.5s ease-in-out infinite alternate; }
+
+.g-topbar-btns { display: flex; gap: 8px; }
+.g-btn {
+  height: 32px; padding: 0 12px;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text-dim);
+  font-family: var(--fd); font-size: 10px; letter-spacing: 0.1em;
+  cursor: pointer; transition: all 0.15s;
+  touch-action: manipulation; text-decoration: none;
+  display: flex; align-items: center;
+}
+.g-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+/* ── Paneles de jugador ── */
+.p-panel {
+  display: flex; flex-direction: column;
+  padding: 10px; overflow: hidden; position: relative;
+}
+/* Fondo con gradiente de color del jugador */
+.p-panel.blue {
+  background: linear-gradient(160deg, rgba(0,100,200,0.07) 0%, transparent 60%);
+  border-right: 1px solid rgba(0,170,255,0.12);
+}
+.p-panel.red {
+  background: linear-gradient(200deg, rgba(200,0,60,0.07) 0%, transparent 60%);
+  border-left: 1px solid rgba(255,51,85,0.12);
+}
+
+/* Flash de acierto/error (parpadeo de color) */
+.p-flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 10; }
+.p-flash.ok  { background: rgba(0,255,100,0.11); opacity:1; animation: flash .4s ease forwards; }
+.p-flash.bad { background: rgba(255,0,80,0.11);  opacity:1; animation: flash .4s ease forwards; }
+
+/* ── Cabecera del jugador ── */
+.p-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-shrink: 0; }
+.red .p-header { flex-direction: row-reverse; }  /* espeja para rojo */
+
+.p-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--fd); font-size: 14px; font-weight: 900; flex-shrink: 0;
+}
+.blue .p-avatar { background: var(--blue-dark); color:#fff; box-shadow: 0 0 14px var(--blue-glow); }
+.red  .p-avatar { background: var(--red-dark);  color:#fff; box-shadow: 0 0 14px var(--red-glow); }
+
+.p-name { font-family: var(--fd); font-size: clamp(11px,1.1vw,15px); font-weight: 700; letter-spacing: 0.08em; }
+.blue .p-name { color: var(--blue); }
+.red  .p-name { color: var(--red); }
+
+.p-score-tag { font-family: var(--fd); font-size: 10px; letter-spacing: 0.1em; color: var(--text-dim); }
+.p-score-tag span { color: var(--text); font-weight: 700; }
+
+/* ── Área de la operación matemática ── */
+.p-op-area {
+  flex-shrink: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 6px; padding: 8px 0;
+}
+
+/* La pregunta grande */
+.p-op {
+  font-family: var(--fd); font-size: clamp(20px, 2.8vw, 42px);
+  font-weight: 700; text-align: center; color: var(--text);
+  letter-spacing: 0.04em; line-height: 1.1;
+}
+
+/* Campo de respuesta (muestra los números que va tocando el estudiante) */
+.p-ans {
+  font-family: var(--fd); font-size: clamp(18px, 2.4vw, 36px);
+  font-weight: 700; width: 100%; max-width: 260px;
+  text-align: center; border-bottom: 3px solid;
+  padding-bottom: 4px; letter-spacing: 0.1em; min-height: 44px;
+  display: flex; align-items: center; justify-content: center;
+}
+.blue .p-ans { border-color: var(--blue); color: var(--blue); }
+.red  .p-ans { border-color: var(--red);  color: var(--red); }
+
+/* Cursor parpadeante */
+.p-ans .cursor {
+  display:inline-block; width:3px; height:0.8em;
+  vertical-align:middle; margin-left:2px;
+  animation: blink 1s step-end infinite;
+}
+.blue .p-ans .cursor { background: var(--blue); }
+.red  .p-ans .cursor { background: var(--red); }
+
+/* ── Teclado numérico táctil ──
+   Ocupa todo el espacio restante del panel
+   gracias a flex:1
+══ */
+.p-numpad-wrap { flex: 1; display: flex; flex-direction: column; gap: 5px; min-height: 0; }
+
+.numpad {
+  flex: 1;                              /* se estira para llenar el espacio */
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 5px; min-height: 0;
+}
+
+.nk {
+  border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg3); color: var(--text);
+  font-family: var(--fd); font-weight: 700;
+  font-size: clamp(14px, 2vw, 26px);
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  display: flex; align-items: center; justify-content: center;
+}
+/* Efecto al tocar */
+.blue .nk:active { background: rgba(0,170,255,0.2); border-color: var(--blue); }
+.red  .nk:active { background: rgba(255,51,85,0.2);  border-color: var(--red); }
+.nk.special { color: var(--text-dim); font-size: 85%; }
+
+/* ── BOTÓN ENVIAR — verde brillante, inconfundible ──
+   Es el botón más importante: confirma la respuesta.
+   Color verde para diferenciarlo completamente del numpad.
+══ */
+.btn-enter {
+  flex-shrink: 0; min-height: 52px;
+  border: none; border-radius: 10px;
+  font-family: var(--fd); font-weight: 700;
+  letter-spacing: 0.1em; font-size: clamp(14px, 1.6vw, 20px);
+  cursor: pointer; transition: all 0.14s;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  /* Verde para ambos jugadores — no confunde con azul/rojo */
+  background: linear-gradient(135deg, var(--green-dark), var(--green));
+  color: #003311;
+  box-shadow: 0 0 20px var(--green-glow);
+}
+.btn-enter:active { transform: scale(0.97); filter: brightness(1.1); }
+
+/* ── Columna central ── */
+.g-center {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 10px 8px; gap: 10px;
+}
+.vs { font-family: var(--fd); font-size: 11px; letter-spacing: 0.2em; color: var(--text-dim); }
+
+/* Barras de progreso */
+.prg-tracks { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.prg-wrap   { display: flex; flex-direction: column; gap: 3px; }
+.prg-lbl    { font-family: var(--fd); font-size: 9px; letter-spacing: 0.15em; text-align: center; }
+.prg-lbl.b  { color: var(--blue); }
+.prg-lbl.r  { color: var(--red); }
+.prg-track  { height: 20px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.prg-fill   { height: 100%; border-radius: 10px; transition: width 0.5s cubic-bezier(0.25,1,0.5,1); min-width: 0; }
+.prg-fill.b { background: linear-gradient(90deg, var(--blue-dark), var(--blue)); box-shadow: 0 0 8px var(--blue-glow); }
+.prg-fill.r { background: linear-gradient(90deg, var(--red-dark), var(--red)); box-shadow: 0 0 8px var(--red-glow); }
+.prg-pct    { font-family: var(--fd); font-size: 9px; color: var(--text-dim); text-align: center; }
+
+.c-divider  { width: 80%; height: 1px; background: var(--border); }
+
+/* Marcador */
+.scoreboard { text-align: center; }
+.sb-label   { font-family: var(--fd); font-size: 9px; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 4px; }
+.sb-score   { font-family: var(--fd); font-size: clamp(22px, 2.2vw, 34px); font-weight: 900; }
+.sb-score .b { color: var(--blue); }
+.sb-score .r { color: var(--red); }
+.sb-score .sep { color: var(--text-dim); font-size: 70%; }
+.sb-goal    { font-family: var(--fd); font-size: 9px; color: var(--text-dim); margin-top: 3px; }
+
+/* ══════════════════════════════════════
+   PANTALLA: VICTORIA
+══════════════════════════════════════ */
+#screen-victory { flex-direction: column; gap: 20px; background: var(--bg); }
+
+/* Brillo de fondo según ganador */
+.vic-glow   { position: absolute; inset: 0; pointer-events: none; }
+.vic-glow.b { background: radial-gradient(ellipse at center, rgba(0,170,255,0.14) 0%, transparent 65%); }
+.vic-glow.r { background: radial-gradient(ellipse at center, rgba(255,51,85,0.14)  0%, transparent 65%); }
+.vic-glow.t { background: radial-gradient(ellipse at center, rgba(255,215,0,0.1)   0%, transparent 65%); }
+
+.vic-lbl    { font-family: var(--fd); font-size: clamp(12px,1.6vw,16px); letter-spacing: 0.4em; color: var(--text-dim); }
+.vic-winner { font-family: var(--fd); font-size: clamp(48px, 9vw, 110px); font-weight: 900; line-height: 1; }
+.vic-winner.b { color: var(--blue); text-shadow: 0 0 50px var(--blue-glow); }
+.vic-winner.r { color: var(--red);  text-shadow: 0 0 50px var(--red-glow); }
+.vic-winner.t { color: var(--gold); text-shadow: 0 0 50px rgba(255,215,0,.35); }
+
+.vic-sub    { font-size: clamp(16px, 2.5vw, 24px); color: var(--text-dim); text-align: center; }
+.vic-stats  { display: flex; gap: 32px; font-family: var(--fd); font-size: 14px; color: var(--text-dim); }
+.vic-stats span { color: var(--text); font-weight: 700; }
+.vic-btns   { display: flex; flex-direction: column; gap: 10px; width: min(300px, 90vw); margin-top: 8px; }
+
+/* ── Partículas de confeti ── */
+.particle { position: fixed; pointer-events: none; animation: pfloat linear forwards; }
+@keyframes pfloat {
+  0%   { transform: translateY(-30px) rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+}
+
+/* ── Animaciones de keyframes compartidas ── */
+@keyframes flash   { to { opacity: 0; } }
+@keyframes blink   { 50% { opacity: 0; } }
+@keyframes blink-t { to  { opacity: 0.45; } }
+
+/* ══════════════════════════════════════
+   PANTALLA: CUENTA REGRESIVA
+══════════════════════════════════════ */
+#screen-countdown {
+  background:
+    radial-gradient(ellipse at 25% 50%, rgba(0,100,255,0.1) 0%, transparent 55%),
+    radial-gradient(ellipse at 75% 50%, rgba(255,0,80,0.1) 0%, transparent 55%);
+}
+
+/* Número grande que hace zoom+fade */
+.cd-number {
+  font-family: var(--fd);
+  font-size: clamp(140px, 25vw, 280px);
+  font-weight: 900;
+  line-height: 1;
+  /* el color y glow se cambian por JS */
+  animation: cd-pop 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Texto debajo del número */
+.cd-label {
+  font-family: var(--fd);
+  font-size: clamp(14px, 2vw, 22px);
+  letter-spacing: 0.35em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-top: 12px;
+  animation: cd-fade 0.85s ease both;
+}
+
+/* Anillo de progreso alrededor del número */
+.cd-ring-wrap {
+  position: absolute;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.cd-ring {
+  width: clamp(240px, 38vw, 440px);
+  height: clamp(240px, 38vw, 440px);
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  position: relative;
+}
+/* Arco de color que se vacía como cuenta regresiva */
+.cd-ring::before {
+  content: '';
+  position: absolute; inset: -3px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  animation: cd-arc 1s linear both;
+}
+
+/* Texto lateral: nombre de jugadores */
+.cd-players {
+  position: absolute;
+  bottom: 10vh;
+  display: flex;
+  gap: clamp(40px, 8vw, 120px);
+  align-items: center;
+}
+.cd-player {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  animation: cd-fade 0.5s 0.1s ease both;
+}
+.cd-player-dot {
+  width: 18px; height: 18px; border-radius: 50%;
+}
+.cd-player-dot.b { background: var(--blue); box-shadow: 0 0 12px var(--blue-glow); }
+.cd-player-dot.r { background: var(--red);  box-shadow: 0 0 12px var(--red-glow); }
+.cd-player-name {
+  font-family: var(--fd); font-size: 12px;
+  letter-spacing: 0.15em; color: var(--text-dim);
+}
+
+/* Texto "¡YA!" cuando llega a 0 */
+.cd-go {
+  font-family: var(--fd);
+  font-size: clamp(80px, 16vw, 180px);
+  font-weight: 900;
+  color: var(--green);
+  text-shadow: 0 0 60px var(--green-glow), 0 0 120px var(--green-glow);
+  animation: cd-go-anim 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  display: none;
+}
+
+/* Keyframes de la cuenta regresiva */
+@keyframes cd-pop {
+  0%   { opacity: 0; transform: scale(1.8);  }
+  40%  { opacity: 1; transform: scale(0.92); }
+  70%  { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes cd-fade {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes cd-exit {
+  to { opacity: 0; transform: scale(0.6); }
+}
+@keyframes cd-go-anim {
+  0%   { opacity: 0; transform: scale(0.4); }
+  60%  { transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ MENÚ ══ -->
+<div class="screen active" id="screen-menu">
+  <div class="logo"><span class="b">MATH</span> <span style="color:#fff">BATTLE</span> <span class="r">ARENA</span></div>
+  <div class="logo-game">🏁 <span>Carrera de Operaciones</span></div>
+  <div class="logo-sub">Competencia matemática 1 vs 1</div>
+  <div class="menu-btns">
+    <button class="btn btn-primary" id="btn-play">▶ &nbsp;INICIAR PARTIDA</button>
+    <button class="btn btn-ghost"   id="btn-config">⚙ &nbsp;CONFIGURACIÓN</button>
+    <a class="btn-back-hub" href="../index.html">← Volver al Hub de Juegos</a>
+  </div>
+</div>
+
+<!-- ══ CUENTA REGRESIVA ══ -->
+<div class="screen" id="screen-countdown">
+  <div class="cd-ring-wrap">
+    <div class="cd-ring" id="cd-ring"></div>
+  </div>
+  <div class="cd-number" id="cd-number">3</div>
+  <div class="cd-go"     id="cd-go">¡YA!</div>
+  <div class="cd-label"  id="cd-label">PREPÁRENSE</div>
+  <div class="cd-players">
+    <div class="cd-player">
+      <div class="cd-player-dot b"></div>
+      <div class="cd-player-name">JUGADOR AZUL</div>
+    </div>
+    <div class="cd-player" style="opacity:.4;font-size:18px;color:var(--text-dim);font-family:var(--fd);letter-spacing:.1em">VS</div>
+    <div class="cd-player">
+      <div class="cd-player-dot r"></div>
+      <div class="cd-player-name">JUGADOR ROJO</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONFIGURACIÓN ══ -->
+<div class="screen" id="screen-config">
+  <div class="cfg-title">⚙ CONFIGURACIÓN</div>
+  <div class="cfg-panel">
+    <div>
+      <label class="cfg-lbl">🎯 Dificultad</label>
+      <div class="diff-grid">
+        <button class="diff-btn sel" data-diff="easy">FÁCIL<br><span style="font-size:10px;opacity:.65">sumas y restas</span></button>
+        <button class="diff-btn"     data-diff="medium">MEDIA<br><span style="font-size:10px;opacity:.65">× y ÷</span></button>
+        <button class="diff-btn"     data-diff="hard">DIFÍCIL<br><span style="font-size:10px;opacity:.65">combinadas</span></button>
+      </div>
+    </div>
+    <div class="cfg-row">
+      <label>🏆 Aciertos para ganar</label>
+      <div class="num-ctrl">
+        <button class="nc-btn" id="g-dec">−</button>
+        <div class="nc-val" id="g-val">10</div>
+        <button class="nc-btn" id="g-inc">+</button>
+      </div>
+    </div>
+    <div class="cfg-row">
+      <label>⏱ Temporizador</label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="num-ctrl" id="t-ctrl">
+          <button class="nc-btn" id="t-dec">−</button>
+          <div class="nc-val" id="t-val">60</div>
+          <button class="nc-btn" id="t-inc">+</button>
+        </div>
+        <label class="toggle"><input type="checkbox" id="tog-timer" checked><div class="toggle-track"></div></label>
+      </div>
+    </div>
+    <div class="cfg-row">
+      <label>🔊 Sonidos</label>
+      <label class="toggle"><input type="checkbox" id="tog-sound" checked><div class="toggle-track"></div></label>
+    </div>
+  </div>
+  <div class="cfg-footer">
+    <button class="btn btn-primary" id="cfg-play">▶ &nbsp;INICIAR JUEGO</button>
+    <button class="btn btn-ghost btn-sm" id="cfg-back">← VOLVER</button>
+  </div>
+</div>
+
+<!-- ══ JUEGO ══ -->
+<div class="screen" id="screen-game">
+  <div class="game-wrap">
+
+    <div class="g-topbar">
+      <div class="g-topbar-info">
+        <div class="g-topbar-title">MATH BATTLE ARENA</div>
+        <div style="color:var(--border)">·</div>
+        <div class="g-topbar-game">🏁 Carrera de Operaciones</div>
+      </div>
+      <div class="g-timer" id="g-timer" style="display:none">60</div>
+      <div class="g-topbar-btns">
+        <button class="g-btn" id="g-menu-btn">↩ MENÚ</button>
+        <a class="g-btn" href="../index.html">⊞ HUB</a>
+      </div>
+    </div>
+
+    <!-- AZUL -->
+    <div class="p-panel blue">
+      <div class="p-flash" id="flash-blue"></div>
+      <div class="p-header">
+        <div class="p-avatar">J1</div>
+        <div>
+          <div class="p-name">JUGADOR AZUL</div>
+          <div class="p-score-tag">Aciertos: <span id="sh-blue">0</span></div>
+        </div>
+      </div>
+      <div class="p-op-area">
+        <div class="p-op" id="op-blue">—</div>
+        <div class="p-ans"><span id="av-blue"></span><span class="cursor"></span></div>
+      </div>
+      <div class="p-numpad-wrap">
+        <div class="numpad" id="np-blue">
+          <div class="nk" data-v="7">7</div><div class="nk" data-v="8">8</div><div class="nk" data-v="9">9</div>
+          <div class="nk" data-v="4">4</div><div class="nk" data-v="5">5</div><div class="nk" data-v="6">6</div>
+          <div class="nk" data-v="1">1</div><div class="nk" data-v="2">2</div><div class="nk" data-v="3">3</div>
+          <div class="nk special" data-v="neg">±</div><div class="nk" data-v="0">0</div><div class="nk special" data-v="del">⌫</div>
+        </div>
+        <div class="btn-enter" id="enter-blue">✓ &nbsp;ENVIAR RESPUESTA</div>
+      </div>
+    </div>
+
+    <!-- CENTRO -->
+    <div class="g-center">
+      <div class="vs">● VS ●</div>
+      <div class="prg-tracks">
+        <div class="prg-wrap">
+          <div class="prg-lbl b">AZUL</div>
+          <div class="prg-track"><div class="prg-fill b" id="prg-blue" style="width:0%"></div></div>
+          <div class="prg-pct" id="pct-blue">0%</div>
+        </div>
+        <div style="width:80%;height:1px;background:var(--border);margin:0 auto"></div>
+        <div class="prg-wrap">
+          <div class="prg-lbl r">ROJO</div>
+          <div class="prg-track"><div class="prg-fill r" id="prg-red" style="width:0%"></div></div>
+          <div class="prg-pct" id="pct-red">0%</div>
+        </div>
+      </div>
+      <div class="c-divider"></div>
+      <div class="scoreboard">
+        <div class="sb-label">MARCADOR</div>
+        <div class="sb-score">
+          <span class="b" id="sb-blue">0</span>
+          <span class="sep"> – </span>
+          <span class="r"  id="sb-red">0</span>
+        </div>
+        <div class="sb-goal" id="sb-goal">META: 10</div>
+      </div>
+    </div>
+
+    <!-- ROJO -->
+    <div class="p-panel red">
+      <div class="p-flash" id="flash-red"></div>
+      <div class="p-header">
+        <div class="p-avatar">J2</div>
+        <div style="text-align:right">
+          <div class="p-name">JUGADOR ROJO</div>
+          <div class="p-score-tag">Aciertos: <span id="sh-red">0</span></div>
+        </div>
+      </div>
+      <div class="p-op-area">
+        <div class="p-op" id="op-red">—</div>
+        <div class="p-ans"><span id="av-red"></span><span class="cursor"></span></div>
+      </div>
+      <div class="p-numpad-wrap">
+        <div class="numpad" id="np-red">
+          <div class="nk" data-v="7">7</div><div class="nk" data-v="8">8</div><div class="nk" data-v="9">9</div>
+          <div class="nk" data-v="4">4</div><div class="nk" data-v="5">5</div><div class="nk" data-v="6">6</div>
+          <div class="nk" data-v="1">1</div><div class="nk" data-v="2">2</div><div class="nk" data-v="3">3</div>
+          <div class="nk special" data-v="neg">±</div><div class="nk" data-v="0">0</div><div class="nk special" data-v="del">⌫</div>
+        </div>
+        <div class="btn-enter" id="enter-red">✓ &nbsp;ENVIAR RESPUESTA</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ VICTORIA ══ -->
+<div class="screen" id="screen-victory">
+  <div class="vic-glow" id="vic-glow"></div>
+  <div class="vic-lbl"    id="vic-lbl">GANADOR</div>
+  <div class="vic-winner" id="vic-winner">AZUL</div>
+  <div class="vic-sub"    id="vic-sub">¡Primero en llegar a la meta!</div>
+  <div class="vic-stats"  id="vic-stats"></div>
+  <div class="vic-btns">
+    <button class="btn btn-primary" id="vic-replay">↺ &nbsp;REVANCHA</button>
+    <button class="btn btn-ghost"   id="vic-menu">↩ &nbsp;MENÚ DEL JUEGO</button>
+    <a class="btn-back-hub" href="../index.html">⊞ Volver al Hub de Juegos</a>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+//  LÓGICA DEL JUEGO
+// ════════════════════════════════════════
+
+// Configuración (se modifica desde el panel)
+const CFG = { difficulty:'easy', goal:10, timerOn:true, timerSec:60, soundOn:true };
+
+// Estado de la partida en curso
+const STATE = {
+  active: false,
+  blue: { score:0, ans:'', q:null },
+  red:  { score:0, ans:'', q:null },
+  timerLeft:60, timerIv:null
+};
+
+// Cambia de pantalla visible
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── Sonidos con Web Audio API (sin archivos externos) ──
+let _ac = null;
+function ac() { return _ac || (_ac = new (window.AudioContext || window.webkitAudioContext)()); }
+function tone(f, type, dur, vol=0.28) {
+  if (!CFG.soundOn) return;
+  try {
+    const ctx=ac(), o=ctx.createOscillator(), g=ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type=type; o.frequency.value=f;
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+dur);
+    o.start(); o.stop(ctx.currentTime+dur);
+  } catch(e) {}
+}
+const sndOk  = () => { tone(523,'sine',.09); setTimeout(()=>tone(784,'sine',.14),70); };
+const sndBad = () => tone(190,'sawtooth',.14,.22);
+const sndWin = () => [523,659,784,1047].forEach((f,i) => setTimeout(()=>tone(f,'sine',.28), i*75));
+
+// ── Generador de preguntas ──
+const rnd = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+
+function genQ(diff) {
+  if (diff === 'easy') {
+    const op = rnd(0,1) ? '+' : '-';
+    let a=rnd(1,20), b=rnd(1,20);
+    if (op==='-' && b>a) { let t=a; a=b; b=t; }
+    return { text:`${a} ${op} ${b} = ?`, ans: op==='+'?a+b:a-b };
+  }
+  if (diff === 'medium') {
+    if (rnd(0,1)) { const a=rnd(2,12),b=rnd(2,12); return {text:`${a} × ${b} = ?`, ans:a*b}; }
+    else          { const d=rnd(2,12),q=rnd(2,12); return {text:`${d*q} ÷ ${d} = ?`, ans:q}; }
+  }
+  // hard
+  const t = rnd(0,2);
+  if (t===0) { const a=rnd(2,15),b=rnd(2,15),c=rnd(2,9); return {text:`(${a}+${b})×${c}=?`, ans:(a+b)*c}; }
+  if (t===1) { const a=rnd(2,12),b=rnd(2,12),c=rnd(1,30); return {text:`${a}×${b}+${c}=?`, ans:a*b+c}; }
+  const a=rnd(100,500), b=rnd(100,500); return {text:`${a}+${b}=?`, ans:a+b};
+}
+
+// ── Entrada de teclado táctil ──
+function inp(side, v) {
+  const s = STATE[side]; if (!STATE.active) return;
+  if (v==='del')       s.ans = s.ans.slice(0,-1);
+  else if (v==='neg')  s.ans = s.ans.startsWith('-') ? s.ans.slice(1) : (s.ans ? '-'+s.ans : s.ans);
+  else if (s.ans.length < 8) s.ans += v;
+  document.getElementById('av-'+side).textContent = s.ans;
+}
+
+// ── Envío de respuesta ──
+function submit(side) {
+  const s = STATE[side];
+  if (!STATE.active || !s.ans || s.ans==='-') return;
+  const ok = parseInt(s.ans, 10) === s.q.ans;
+  // Flash visual
+  const fl = document.getElementById('flash-'+side);
+  fl.className = 'p-flash'; void fl.offsetWidth;
+  if (ok) {
+    sndOk(); fl.classList.add('ok');
+    s.score++; s.ans=''; updateUI();
+    s.q = genQ(CFG.difficulty);
+    document.getElementById('op-'+side).textContent = s.q.text;
+    document.getElementById('av-'+side).textContent = '';
+    if (s.score >= CFG.goal) endGame(side);
+  } else {
+    sndBad(); fl.classList.add('bad');
+    s.ans = ''; document.getElementById('av-'+side).textContent = '';
+  }
+}
+
+// ── Actualiza marcador y barras ──
+function updateUI() {
+  ['blue','red'].forEach(s => {
+    const sc = STATE[s].score;
+    document.getElementById('sh-'+s).textContent = sc;
+    document.getElementById('sb-'+s).textContent = sc;
+    const pct = Math.min(100, Math.round(sc/CFG.goal*100));
+    document.getElementById('prg-'+s).style.width = pct+'%';
+    document.getElementById('pct-'+s).textContent = pct+'%';
+  });
+}
+
+// ── Temporizador ──
+function startTimer() {
+  STATE.timerLeft = CFG.timerSec;
+  const el = document.getElementById('g-timer');
+  el.style.display = CFG.timerOn ? '' : 'none';
+  if (!CFG.timerOn) return;
+  el.textContent = STATE.timerLeft;
+  STATE.timerIv = setInterval(() => {
+    STATE.timerLeft--;
+    el.textContent = STATE.timerLeft;
+    if (STATE.timerLeft <= 10) el.classList.add('urgent');
+    if (STATE.timerLeft <= 0) {
+      clearInterval(STATE.timerIv);
+      const {blue,red} = STATE;
+      endGame(blue.score>red.score ? 'blue' : red.score>blue.score ? 'red' : 'tie');
+    }
+  }, 1000);
+}
+function stopTimer() { clearInterval(STATE.timerIv); document.getElementById('g-timer').classList.remove('urgent'); }
+
+// ── Cuenta regresiva 3-2-1-¡YA! ──
+function startCountdown(callback) {
+  show('screen-countdown');
+
+  const numEl   = document.getElementById('cd-number');
+  const goEl    = document.getElementById('cd-go');
+  const labelEl = document.getElementById('cd-label');
+
+  const steps = [
+    { n:'3', color:'var(--blue)', glow:'rgba(0,170,255,0.5)',  label:'PREPÁRENSE' },
+    { n:'2', color:'var(--gold)', glow:'rgba(255,215,0,0.5)',  label:'LISTOS...'  },
+    { n:'1', color:'var(--red)',  glow:'rgba(255,51,85,0.5)',   label:'¡ATENCIÓN!' },
+  ];
+
+  // Reinicia la animación CSS de un elemento
+  function reAnimate(el) {
+    el.style.animation = 'none';
+    void el.offsetWidth;          // fuerza reflow
+    el.style.animation = '';
+  }
+
+  let i = 0;
+
+  function tick() {
+    if (i >= steps.length) {
+      // ── ¡YA! ──
+      numEl.style.display   = 'none';
+      labelEl.style.display = 'none';
+      goEl.style.display    = 'block';
+      reAnimate(goEl);
+      tone(1047, 'sine', 0.4, 0.4);
+      setTimeout(callback, 750);
+      return;
+    }
+
+    const s = steps[i];
+    numEl.style.display   = 'block';
+    labelEl.style.display = 'block';
+    goEl.style.display    = 'none';
+
+    numEl.textContent  = s.n;
+    numEl.style.color  = s.color;
+    numEl.style.textShadow = `0 0 60px ${s.glow}, 0 0 120px ${s.glow}`;
+    reAnimate(numEl);
+
+    labelEl.textContent = s.label;
+    reAnimate(labelEl);
+
+    const freqs = [392, 440, 523];
+    tone(freqs[i], 'sine', 0.18, 0.35);
+
+    i++;
+    setTimeout(tick, 950);
+  }
+
+  tick();
+}
+
+// ── Preparar estado del juego (sin activarlo aún) ──
+function prepareGame() {
+  ['blue','red'].forEach(s => { STATE[s].score=0; STATE[s].ans=''; STATE[s].q=genQ(CFG.difficulty); });
+  document.getElementById('op-blue').textContent = STATE.blue.q.text;
+  document.getElementById('op-red').textContent  = STATE.red.q.text;
+  document.getElementById('av-blue').textContent = '';
+  document.getElementById('av-red').textContent  = '';
+  document.getElementById('sb-goal').textContent = 'META: '+CFG.goal;
+  updateUI();
+}
+
+// ── Iniciar partida (con cuenta regresiva) ──
+function startGame() {
+  prepareGame();
+  startCountdown(() => {
+    STATE.active = true;
+    show('screen-game');
+    startTimer();
+  });
+}
+
+// ── Fin de partida ──
+function endGame(winner) {
+  STATE.active = false; stopTimer();
+  const glow = document.getElementById('vic-glow');
+  const wEl  = document.getElementById('vic-winner');
+  glow.className = 'vic-glow'; wEl.className = 'vic-winner';
+  if (winner==='blue') {
+    glow.classList.add('b'); wEl.classList.add('b'); wEl.textContent='🔵 AZUL';
+    document.getElementById('vic-lbl').textContent = '🏆 GANADOR';
+    document.getElementById('vic-sub').textContent = '¡Jugador Azul llegó primero a la meta!';
+  } else if (winner==='red') {
+    glow.classList.add('r'); wEl.classList.add('r'); wEl.textContent='🔴 ROJO';
+    document.getElementById('vic-lbl').textContent = '🏆 GANADOR';
+    document.getElementById('vic-sub').textContent = '¡Jugador Rojo llegó primero a la meta!';
+  } else {
+    glow.classList.add('t'); wEl.classList.add('t'); wEl.textContent='🤝 EMPATE';
+    document.getElementById('vic-lbl').textContent = '⏱ TIEMPO AGOTADO';
+    document.getElementById('vic-sub').textContent = '¡Ambos jugadores con el mismo puntaje!';
+  }
+  document.getElementById('vic-stats').innerHTML =
+    `<div>Azul: <span>${STATE.blue.score}</span></div>
+     <div style="color:var(--border)">|</div>
+     <div>Rojo: <span>${STATE.red.score}</span></div>`;
+  sndWin(); spawnParticles(winner); show('screen-victory');
+}
+
+// ── Confeti de victoria ──
+function spawnParticles(w) {
+  const cols = w==='blue' ? ['#00aaff','#0066cc','#fff']
+             : w==='red'  ? ['#ff3355','#cc0033','#fff']
+             :               ['#ffd700','#ff8800','#fff'];
+  for (let i=0; i<70; i++) {
+    const p = document.createElement('div'); p.className='particle';
+    const sz = 4+Math.random()*7;
+    p.style.cssText = `left:${Math.random()*100}vw;top:${-10-Math.random()*80}px;width:${sz}px;height:${sz}px;background:${cols[~~(Math.random()*cols.length)]};border-radius:${Math.random()>.5?'50%':'3px'};animation-duration:${1.5+Math.random()*2.5}s;animation-delay:${Math.random()*1.2}s;`;
+    document.body.appendChild(p); setTimeout(()=>p.remove(), 4500);
+  }
+}
+
+// ── Configuración UI ──
+document.querySelectorAll('.diff-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.diff-btn').forEach(x => x.classList.remove('sel'));
+  b.classList.add('sel'); CFG.difficulty = b.dataset.diff;
+}));
+let g=CFG.goal;
+document.getElementById('g-inc').onclick = () => { g=Math.min(50,g+1); CFG.goal=g; document.getElementById('g-val').textContent=g; };
+document.getElementById('g-dec').onclick = () => { g=Math.max(3,g-1);  CFG.goal=g; document.getElementById('g-val').textContent=g; };
+let t=CFG.timerSec;
+document.getElementById('t-inc').onclick = () => { t=Math.min(300,t+15); CFG.timerSec=t; document.getElementById('t-val').textContent=t; };
+document.getElementById('t-dec').onclick = () => { t=Math.max(15,t-15);  CFG.timerSec=t; document.getElementById('t-val').textContent=t; };
+document.getElementById('tog-timer').onchange = e => { CFG.timerOn=e.target.checked; document.getElementById('t-ctrl').style.opacity=e.target.checked?'1':'0.3'; };
+document.getElementById('tog-sound').onchange = e => { CFG.soundOn=e.target.checked; };
+
+// ── Teclado táctil ──
+['blue','red'].forEach(side => {
+  document.getElementById('np-'+side).addEventListener('pointerdown', e => {
+    const k = e.target.closest('.nk'); if (!k) return;
+    e.preventDefault(); inp(side, k.dataset.v);
+  });
+  document.getElementById('enter-'+side).addEventListener('pointerdown', e => {
+    e.preventDefault(); submit(side);
+  });
+});
+
+// ── Navegación ──
+document.getElementById('btn-play').onclick   = () => startGame();
+document.getElementById('btn-config').onclick  = () => show('screen-config');
+document.getElementById('cfg-back').onclick    = () => show('screen-menu');
+document.getElementById('cfg-play').onclick    = () => startGame();
+document.getElementById('g-menu-btn').onclick  = () => { stopTimer(); STATE.active=false; show('screen-menu'); };
+document.getElementById('vic-replay').onclick  = () => startGame();
+document.getElementById('vic-menu').onclick    = () => show('screen-menu');
+</script>
+</body>
+</html>

@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Memoria Visual — Math Battle Arena</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
+
+/* ══ VARIABLES ══ */
+:root {
+  --blue:#00aaff;   --blue-dark:#0066cc;  --blue-glow:rgba(0,170,255,0.35);
+  --red:#ff3355;    --red-dark:#cc0033;   --red-glow:rgba(255,51,85,0.35);
+  --gold:#ffd700;   --green:#00ff66;      --green-glow:rgba(0,255,100,0.3);
+  --teal:#00ddcc;   --teal-glow:rgba(0,221,204,0.35);
+  --bg:#0a0a12;  --bg2:#111120;  --bg3:#1a1a2e;  --bg4:#12121e;
+  --text:#e8e8ff;  --text-dim:#7878aa;  --border:rgba(255,255,255,0.08);
+  --fd:'Orbitron',monospace;  --fb:'Rajdhani',sans-serif;
+  /* Paleta de colores del juego */
+  --c0:#ff3355; --c1:#00aaff; --c2:#ffd700; --c3:#00ff66;
+  --c4:#ff9500; --c5:#aa44ff; --c6:#00ddcc; --c7:#ff66aa;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--fb);touch-action:manipulation;user-select:none;-webkit-user-select:none;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,170,255,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,170,255,0.018) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0;}
+
+/* ══ SCREENS ══ */
+.screen{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s ease;}
+.screen.active{opacity:1;pointer-events:all;}
+
+/* ══ BOTONES REUTILIZABLES ══ */
+.btn{height:74px;border:none;cursor:pointer;font-family:var(--fd);font-size:clamp(13px,1.8vw,18px);font-weight:700;letter-spacing:.08em;border-radius:10px;transition:all .18s;position:relative;overflow:hidden;touch-action:manipulation;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;gap:10px;}
+.btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0);transition:background .12s;}
+.btn:active::after{background:rgba(255,255,255,.1);}
+.btn-teal{background:linear-gradient(135deg,var(--teal-dark,#009988),var(--teal));color:#001a18;box-shadow:0 0 24px var(--teal-glow),0 4px 16px rgba(0,0,0,.5);}
+.btn-teal:hover{transform:translateY(-2px);box-shadow:0 0 40px var(--teal-glow),0 8px 24px rgba(0,0,0,.5);}
+.btn-ghost{background:var(--bg3);color:var(--text-dim);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:rgba(255,255,255,.18);color:var(--text);}
+.btn-sm{height:48px!important;font-size:12px!important;border-radius:8px;}
+.btn-back{display:flex;align-items:center;justify-content:center;gap:8px;height:40px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:var(--fd);font-size:10px;letter-spacing:.14em;cursor:pointer;transition:all .15s;text-decoration:none;margin-top:6px;}
+.btn-back:hover{border-color:rgba(255,255,255,.2);color:var(--text);}
+
+/* ══ MENÚ ══ */
+#screen-menu{background:radial-gradient(ellipse at 30% 50%,rgba(0,200,200,.07) 0%,transparent 55%),radial-gradient(ellipse at 70% 50%,rgba(0,100,255,.07) 0%,transparent 55%);}
+.logo{font-family:var(--fd);font-weight:900;font-size:clamp(26px,4.5vw,64px);text-align:center;line-height:1;letter-spacing:.04em;margin-bottom:4px;}
+.logo .t{color:var(--teal);text-shadow:0 0 30px var(--teal-glow);}
+.logo .w{color:#fff;}
+.logo-game{font-family:var(--fd);font-size:clamp(12px,1.5vw,19px);font-weight:700;color:var(--text-dim);letter-spacing:.18em;text-align:center;margin-bottom:4px;}
+.logo-game span{color:var(--teal);}
+.logo-sub{font-size:clamp(10px,1.1vw,13px);letter-spacing:.28em;color:var(--text-dim);text-align:center;text-transform:uppercase;margin-bottom:36px;}
+.menu-btns{display:flex;flex-direction:column;gap:10px;width:min(400px,90vw);}
+
+/* ══ CONFIGURACIÓN ══ */
+#screen-config{padding:14px;overflow-y:auto;justify-content:flex-start;padding-top:18px;}
+.cfg-title{font-family:var(--fd);font-size:clamp(14px,2vw,22px);font-weight:700;color:var(--teal);text-align:center;letter-spacing:.1em;margin-bottom:14px;text-shadow:0 0 14px var(--teal-glow);}
+.cfg-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;width:min(680px,97vw);display:flex;flex-direction:column;gap:16px;}
+.cfg-lbl{font-family:var(--fd);font-size:10px;letter-spacing:.2em;color:var(--text-dim);text-transform:uppercase;margin-bottom:7px;display:block;}
+.cfg-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.cfg-row>label{font-size:clamp(13px,1.5vw,17px);color:var(--text);font-weight:600;}
+.seg-ctrl{display:flex;gap:4px;}
+.seg-btn{padding:8px 14px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);font-family:var(--fd);font-size:11px;font-weight:700;color:var(--text-dim);cursor:pointer;transition:all .15s;touch-action:manipulation;}
+.seg-btn.sel{background:rgba(0,221,204,.1);border-color:var(--teal);color:var(--teal);}
+.num-ctrl{display:flex;align-items:center;gap:8px;}
+.nc-btn{width:44px;height:44px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:22px;font-family:var(--fd);cursor:pointer;transition:all .14s;touch-action:manipulation;}
+.nc-btn:hover{border-color:var(--teal);color:var(--teal);}
+.nc-val{font-family:var(--fd);font-size:24px;font-weight:700;color:var(--teal);min-width:42px;text-align:center;}
+.toggle{position:relative;width:58px;height:28px;}
+.toggle input{display:none;}
+.toggle-track{position:absolute;inset:0;background:var(--bg3);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .28s;}
+.toggle-track::after{content:'';position:absolute;width:18px;height:18px;background:var(--text-dim);border-radius:50%;top:4px;left:4px;transition:all .28s;}
+.toggle input:checked+.toggle-track{background:rgba(0,221,204,.18);border-color:var(--teal);}
+.toggle input:checked+.toggle-track::after{transform:translateX(30px);background:var(--teal);}
+.cfg-footer{display:flex;flex-direction:column;gap:8px;width:min(680px,97vw);margin-top:10px;}
+
+/* ══ VISUALIZACIÓN (pantalla central compartida) ══ */
+#screen-viz{flex-direction:column;gap:12px;background:radial-gradient(ellipse at center,rgba(0,200,200,.05) 0%,transparent 60%);}
+.viz-header{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.viz-title{font-family:var(--fd);font-size:clamp(13px,1.8vw,20px);font-weight:700;color:var(--teal);letter-spacing:.12em;}
+.viz-sub{font-family:var(--fd);font-size:11px;letter-spacing:.2em;color:var(--text-dim);}
+/* Barra de progreso */
+.viz-progress-wrap{width:min(340px,80vw);height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;}
+.viz-progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--teal),#aaffee);transition:width .1s linear;box-shadow:0 0 8px var(--teal-glow);}
+.viz-timer{font-family:var(--fd);font-size:clamp(28px,5vw,52px);font-weight:900;color:var(--teal);text-shadow:0 0 20px var(--teal-glow);letter-spacing:.05em;}
+.viz-timer.urgent{color:var(--red);text-shadow:0 0 20px var(--red-glow);animation:blink-t .5s ease-in-out infinite alternate;}
+/* Tablero central de visualización */
+.viz-board-wrap{display:flex;align-items:center;justify-content:center;flex:1;padding:8px;}
+#viz-board{display:grid;gap:5px;}
+.viz-cell{border-radius:8px;transition:all .3s;box-shadow:0 2px 8px rgba(0,0,0,.4);}
+/* Animación de ocultamiento */
+.viz-board-wrap.hiding #viz-board{animation:board-hide .5s ease forwards;}
+@keyframes board-hide{0%{opacity:1;transform:scale(1)}60%{opacity:.3;transform:scale(.92)}100%{opacity:0;transform:scale(.85)}}
+
+/* ══ RECONSTRUCCIÓN (dos paneles) ══ */
+#screen-reconstruct{flex-direction:row;align-items:stretch;padding:0;}
+.game-recon-layout{width:100vw;height:100vh;display:grid;grid-template-rows:48px 1fr 70px;grid-template-columns:1fr 1fr;overflow:hidden;}
+.recon-topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 14px;gap:8px;}
+.recon-topbar-center{display:flex;align-items:center;gap:14px;}
+.rt-title{font-family:var(--fd);font-size:9px;letter-spacing:.2em;color:var(--text-dim);}
+.rt-game{font-family:var(--fd);font-size:9px;letter-spacing:.14em;color:var(--teal);}
+.rt-timer{font-family:var(--fd);font-size:20px;font-weight:700;color:var(--gold);text-shadow:0 0 10px rgba(255,215,0,.35);}
+.rt-timer.urgent{color:var(--red);animation:blink-t .5s ease-in-out infinite alternate;}
+.rt-btns{display:flex;gap:6px;}
+.rt-btn{height:28px;padding:0 10px;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--text-dim);font-family:var(--fd);font-size:9px;letter-spacing:.1em;cursor:pointer;transition:all .15s;touch-action:manipulation;text-decoration:none;display:flex;align-items:center;}
+.rt-btn:hover{border-color:rgba(255,255,255,.2);color:var(--text);}
+
+/* Panel de jugador en reconstrucción */
+.recon-panel{display:flex;flex-direction:column;align-items:center;padding:10px 8px;overflow:hidden;gap:8px;position:relative;}
+.recon-panel.left{background:linear-gradient(170deg,rgba(0,100,200,.06) 0%,transparent 60%);border-right:1px solid var(--border);}
+.recon-panel.right{background:linear-gradient(190deg,rgba(200,0,60,.06) 0%,transparent 60%);}
+.rp-header{display:flex;align-items:center;gap:8px;width:100%;flex-shrink:0;}
+.rp-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:11px;font-weight:900;flex-shrink:0;}
+.left .rp-avatar{background:var(--blue-dark);color:#fff;box-shadow:0 0 10px var(--blue-glow);}
+.right .rp-avatar{background:var(--red-dark);color:#fff;box-shadow:0 0 10px var(--red-glow);}
+.rp-name{font-family:var(--fd);font-size:11px;font-weight:700;letter-spacing:.07em;}
+.left .rp-name{color:var(--blue);}
+.right .rp-name{color:var(--red);}
+.rp-score{font-family:var(--fd);font-size:9px;color:var(--text-dim);}
+.rp-score span{font-weight:700;color:var(--text);}
+
+/* Paleta de colores */
+.color-palette{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;flex-shrink:0;padding:4px;}
+.color-swatch{width:clamp(24px,4vw,36px);height:clamp(24px,4vw,36px);border-radius:7px;cursor:pointer;transition:all .15s;border:2px solid transparent;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.color-swatch.selected{transform:scale(1.2);border-color:#fff;box-shadow:0 0 14px rgba(255,255,255,.4);}
+.color-swatch:active{transform:scale(0.9);}
+
+/* Tablero de reconstrucción */
+.recon-board-wrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;}
+.recon-board{display:grid;gap:4px;}
+.recon-cell{border-radius:7px;border:2px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);cursor:pointer;transition:all .16s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative;}
+.recon-cell:hover{border-color:rgba(255,255,255,.2);transform:scale(1.04);}
+.recon-cell.filled{border-color:transparent;}
+.recon-cell.filled:hover{transform:scale(1.04);}
+.recon-cell .erase-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;font-size:10px;color:rgba(255,255,255,.6);transition:opacity .15s;}
+.recon-cell.filled:hover .erase-hint{opacity:1;}
+
+/* Barra de confirmación */
+.recon-confirm-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-around;background:var(--bg2);border-top:1px solid var(--border);padding:0 16px;gap:12px;}
+.confirm-btn{flex:1;max-width:200px;height:42px;border:none;border-radius:8px;font-family:var(--fd);font-weight:700;font-size:clamp(10px,1.3vw,14px);letter-spacing:.08em;cursor:pointer;transition:all .14s;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:6px;}
+.confirm-btn-p1{background:linear-gradient(135deg,var(--blue-dark),var(--blue));color:#fff;box-shadow:0 0 16px var(--blue-glow);}
+.confirm-btn-p2{background:linear-gradient(135deg,var(--red-dark),var(--red));color:#fff;box-shadow:0 0 16px var(--red-glow);}
+.confirm-btn:active{transform:scale(.97);}
+.confirm-btn.done{opacity:.35;pointer-events:none;}
+.confirm-status{font-family:var(--fd);font-size:9px;letter-spacing:.15em;color:var(--text-dim);text-align:center;}
+
+/* ══ RESULTADOS ══ */
+#screen-results{flex-direction:column;gap:0;background:radial-gradient(ellipse at center,rgba(0,200,200,.06) 0%,transparent 60%);}
+.results-header{font-family:var(--fd);font-size:clamp(14px,2vw,22px);font-weight:700;color:var(--teal);letter-spacing:.12em;text-align:center;margin-bottom:10px;text-shadow:0 0 14px var(--teal-glow);}
+.results-layout{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;justify-content:center;width:min(900px,97vw);flex:1;overflow-y:auto;padding:10px;}
+
+/* Tableros de resultados */
+.result-player{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;min-width:220px;max-width:380px;}
+.result-player-title{font-family:var(--fd);font-size:12px;font-weight:700;letter-spacing:.1em;}
+.result-player-title.p1{color:var(--blue);}
+.result-player-title.p2{color:var(--red);}
+.result-board{display:grid;gap:3px;}
+.result-cell{border-radius:6px;position:relative;transition:all .3s;}
+.result-cell::after{content:'';position:absolute;inset:0;border-radius:6px;}
+.result-cell.correct::after{background:rgba(0,255,100,.35);border:2px solid var(--green);box-shadow:0 0 10px var(--green-glow);animation:cell-correct .4s ease;}
+.result-cell.wrong::after{background:rgba(255,51,85,.35);border:2px solid var(--red);animation:cell-wrong .4s ease;}
+@keyframes cell-correct{0%{opacity:0;transform:scale(.8)}100%{opacity:1;transform:scale(1)}}
+@keyframes cell-wrong{0%{opacity:0;transform:scale(.8)}100%{opacity:1;transform:scale(1)}}
+
+/* Estadísticas */
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;width:100%;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:10px 12px;text-align:center;}
+.stat-val{font-family:var(--fd);font-size:clamp(18px,2.5vw,26px);font-weight:900;}
+.stat-lbl{font-family:var(--fd);font-size:8px;letter-spacing:.15em;color:var(--text-dim);margin-top:2px;}
+.stat-card.p1 .stat-val{color:var(--blue);}
+.stat-card.p2 .stat-val{color:var(--red);}
+.stat-card.gold .stat-val{color:var(--gold);}
+
+/* Ganador */
+.winner-banner{font-family:var(--fd);font-size:clamp(20px,3.5vw,40px);font-weight:900;text-align:center;padding:10px 20px;border-radius:10px;margin-bottom:8px;}
+.winner-banner.p1{color:var(--blue);text-shadow:0 0 30px var(--blue-glow);background:rgba(0,170,255,.06);border:1px solid rgba(0,170,255,.2);}
+.winner-banner.p2{color:var(--red);text-shadow:0 0 30px var(--red-glow);background:rgba(255,51,85,.06);border:1px solid rgba(255,51,85,.2);}
+.winner-banner.tie{color:var(--gold);text-shadow:0 0 30px rgba(255,215,0,.35);background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.2);}
+
+.results-btns{display:flex;flex-direction:column;gap:8px;width:min(300px,90vw);padding-bottom:16px;flex-shrink:0;}
+
+/* ══ MISC ══ */
+@keyframes blink-t{to{opacity:.4}}
+@keyframes flash{to{opacity:0}}
+.particle{position:fixed;pointer-events:none;animation:pfloat linear forwards;z-index:100;}
+@keyframes pfloat{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(105vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- ══ MENÚ ══ -->
+<div class="screen active" id="screen-menu">
+  <div class="logo"><span class="t">MEMORIA</span> <span class="w">VISUAL</span></div>
+  <div class="logo-game">🧠 <span>Math Battle Arena</span> · 1 vs 1</div>
+  <div class="logo-sub">Memoriza · Reconstruye · Gana</div>
+  <div class="menu-btns">
+    <button class="btn btn-teal" id="btn-play">▶ &nbsp;INICIAR PARTIDA</button>
+    <button class="btn btn-ghost" id="btn-config">⚙ &nbsp;CONFIGURACIÓN</button>
+    <a class="btn-back" href="../index.html">← Volver al Hub de Juegos</a>
+  </div>
+</div>
+
+<!-- ══ CONFIGURACIÓN ══ -->
+<div class="screen" id="screen-config">
+  <div class="cfg-title">⚙ CONFIGURACIÓN</div>
+  <div class="cfg-panel">
+
+    <div>
+      <label class="cfg-lbl">📐 Tamaño del tablero</label>
+      <div class="seg-ctrl">
+        <button class="seg-btn sel" data-size="3">3 × 3</button>
+        <button class="seg-btn"     data-size="4">4 × 4</button>
+        <button class="seg-btn"     data-size="5">5 × 5</button>
+      </div>
+    </div>
+
+    <div class="cfg-row">
+      <label>🎨 Cantidad de colores</label>
+      <div class="num-ctrl">
+        <button class="nc-btn" id="col-dec">−</button>
+        <div class="nc-val" id="col-val">4</div>
+        <button class="nc-btn" id="col-inc">+</button>
+      </div>
+    </div>
+
+    <div class="cfg-row">
+      <label>⏱ Tiempo de visualización (seg)</label>
+      <div class="num-ctrl">
+        <button class="nc-btn" id="viz-dec">−</button>
+        <div class="nc-val" id="viz-val">5</div>
+        <button class="nc-btn" id="viz-inc">+</button>
+      </div>
+    </div>
+
+    <div class="cfg-row">
+      <label>⏳ Tiempo de reconstrucción (seg, 0=∞)</label>
+      <div class="num-ctrl">
+        <button class="nc-btn" id="rec-dec">−</button>
+        <div class="nc-val" id="rec-val">30</div>
+        <button class="nc-btn" id="rec-inc">+</button>
+      </div>
+    </div>
+
+    <div class="cfg-row">
+      <label>👁 Cuenta regresiva visible</label>
+      <label class="toggle"><input type="checkbox" id="tog-countdown" checked><div class="toggle-track"></div></label>
+    </div>
+
+    <div class="cfg-row">
+      <label>🗑 Permitir borrar fichas</label>
+      <label class="toggle"><input type="checkbox" id="tog-erase" checked><div class="toggle-track"></div></label>
+    </div>
+
+  </div>
+  <div class="cfg-footer">
+    <button class="btn btn-teal" id="cfg-start">▶ &nbsp;INICIAR</button>
+    <button class="btn btn-ghost btn-sm" id="cfg-back">← VOLVER</button>
+  </div>
+</div>
+
+<!-- ══ VISUALIZACIÓN (tablero compartido central) ══ -->
+<div class="screen" id="screen-viz">
+  <div class="viz-header">
+    <div class="viz-title">⚡ FASE DE MEMORIZACIÓN</div>
+    <div class="viz-sub">AMBOS JUGADORES — Memoricen el tablero</div>
+    <div class="viz-progress-wrap">
+      <div class="viz-progress-fill" id="viz-progress" style="width:100%"></div>
+    </div>
+    <div class="viz-timer" id="viz-timer" style="display:none">5</div>
+  </div>
+  <div class="viz-board-wrap" id="viz-board-wrap">
+    <div id="viz-board"></div>
+  </div>
+</div>
+
+<!-- ══ RECONSTRUCCIÓN ══ -->
+<div class="screen" id="screen-reconstruct">
+  <div class="game-recon-layout">
+
+    <div class="recon-topbar">
+      <div style="font-family:var(--fd);font-size:9px;letter-spacing:.2em;color:var(--text-dim)">MEMORIA VISUAL · MBA</div>
+      <div class="recon-topbar-center">
+        <div style="font-family:var(--fd);font-size:9px;letter-spacing:.14em;color:var(--teal)">🧠 FASE DE RECONSTRUCCIÓN</div>
+        <div class="rt-timer" id="rt-timer" style="display:none">30</div>
+      </div>
+      <div class="rt-btns">
+        <button class="rt-btn" id="rt-menu-btn">↩ MENÚ</button>
+        <a class="rt-btn" href="../index.html">⊞ HUB</a>
+      </div>
+    </div>
+
+    <!-- Panel Jugador 1 (izquierda / azul) -->
+    <div class="recon-panel left" id="panel-p1">
+      <div class="rp-header">
+        <div class="rp-avatar">J1</div>
+        <div>
+          <div class="rp-name">JUGADOR AZUL</div>
+          <div class="rp-score">Casillas: <span id="filled-p1">0</span>/0</div>
+        </div>
+      </div>
+      <div class="color-palette" id="palette-p1"></div>
+      <div class="recon-board-wrap">
+        <div class="recon-board" id="board-p1"></div>
+      </div>
+    </div>
+
+    <!-- Panel Jugador 2 (derecha / rojo) -->
+    <div class="recon-panel right" id="panel-p2">
+      <div class="rp-header">
+        <div class="rp-avatar">J2</div>
+        <div style="text-align:right">
+          <div class="rp-name">JUGADOR ROJO</div>
+          <div class="rp-score">Casillas: <span id="filled-p2">0</span>/0</div>
+        </div>
+      </div>
+      <div class="color-palette" id="palette-p2"></div>
+      <div class="recon-board-wrap">
+        <div class="recon-board" id="board-p2"></div>
+      </div>
+    </div>
+
+    <!-- Barra de confirmación -->
+    <div class="recon-confirm-bar">
+      <button class="confirm-btn confirm-btn-p1" id="confirm-p1">✓ &nbsp;CONFIRMAR AZUL</button>
+      <div class="confirm-status" id="confirm-status">Ambos jugadores deben confirmar</div>
+      <button class="confirm-btn confirm-btn-p2" id="confirm-p2">✓ &nbsp;CONFIRMAR ROJO</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ RESULTADOS ══ -->
+<div class="screen" id="screen-results">
+  <div class="results-header">📊 RESULTADOS FINALES</div>
+  <div class="results-layout" id="results-layout"></div>
+  <div class="results-btns">
+    <button class="btn btn-teal" id="res-replay">↺ &nbsp;NUEVA PARTIDA</button>
+    <button class="btn btn-ghost btn-sm" id="res-config">⚙ CONFIGURACIÓN</button>
+    <a class="btn-back" href="../index.html">⊞ Hub de Juegos</a>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   MEMORIA VISUAL — Motor principal
+   Módulos:
+   ├── CFG        Configuración
+   ├── PALETTE    Paleta de colores del juego
+   ├── STATE      Estado del juego
+   ├── TIMERS     Gestión de temporizadores
+   ├── RENDER     Renderizado de tableros
+   ├── GAME       Lógica principal del juego
+   ├── RESULTS    Cálculo y muestra de resultados
+   └── UI         Eventos y pantallas
+══════════════════════════════════════════════════════ */
+
+/* ══ CFG — Configuración ══ */
+const CFG = {
+  size: 3,              // tamaño del tablero (3,4,5)
+  numColors: 4,         // cantidad de colores
+  vizTime: 5,           // segundos de visualización
+  reconTime: 30,        // segundos de reconstrucción (0 = ilimitado)
+  showCountdown: true,  // mostrar timer en viz
+  allowErase: true,     // permitir borrar fichas
+};
+
+/* ══ PALETTE — Paleta de 8 colores base ══ */
+const PALETTE = [
+  { id:0, hex:'#ff3355', name:'Rojo'     },
+  { id:1, hex:'#00aaff', name:'Azul'     },
+  { id:2, hex:'#ffd700', name:'Dorado'   },
+  { id:3, hex:'#00ff66', name:'Verde'    },
+  { id:4, hex:'#ff9500', name:'Naranja'  },
+  { id:5, hex:'#aa44ff', name:'Violeta'  },
+  { id:6, hex:'#00ddcc', name:'Cian'     },
+  { id:7, hex:'#ff66aa', name:'Rosa'     },
+];
+
+/* ══ STATE — Estado del juego ══ */
+const STATE = {
+  /** Matriz original generada aleatoriamente. Array plano de índices de color. */
+  original: [],
+  /** Matrices de los jugadores. {1: [], 2: []} */
+  grids: { 1: [], 2: [] },
+  /** Color seleccionado actualmente. {1: colorIdx, 2: colorIdx} */
+  selected: { 1: 0, 2: 0 },
+  /** ¿Ha confirmado cada jugador? */
+  confirmed: { 1: false, 2: false },
+  /** Tiempos registrados */
+  times: { 1: 0, 2: 0, reconStart: 0 },
+  /** Colores disponibles en esta partida (subconjunto de PALETTE) */
+  activeColors: [],
+  phase: 'idle', // 'viz' | 'recon' | 'results'
+};
+
+/* ══ TIMERS — Gestión de temporizadores ══ */
+const TIMERS = {
+  vizIv: null,
+  reconIv: null,
+
+  /** Inicia el temporizador de visualización */
+  startViz(seconds, onTick, onEnd) {
+    let remaining = seconds;
+    onTick(remaining, seconds);
+    TIMERS.vizIv = setInterval(() => {
+      remaining--;
+      onTick(remaining, seconds);
+      if (remaining <= 0) {
+        clearInterval(TIMERS.vizIv);
+        onEnd();
+      }
+    }, 1000);
+  },
+
+  /** Inicia el temporizador de reconstrucción */
+  startRecon(seconds, onTick, onEnd) {
+    if (seconds === 0) return; // sin límite
+    let remaining = seconds;
+    onTick(remaining);
+    TIMERS.reconIv = setInterval(() => {
+      remaining--;
+      onTick(remaining);
+      if (remaining <= 0) {
+        clearInterval(TIMERS.reconIv);
+        onEnd();
+      }
+    }, 1000);
+  },
+
+  stopAll() {
+    clearInterval(TIMERS.vizIv);
+    clearInterval(TIMERS.reconIv);
+  },
+};
+
+/* ══ RENDER — Renderizado de tableros ══ */
+const RENDER = {
+  /**
+   * Calcula el tamaño de celda para que el tablero quepa en su contenedor.
+   * @param {HTMLElement} wrap  contenedor
+   * @param {number} n         tamaño del tablero
+   * @param {number} gap       espacio entre celdas
+   */
+  cellSize(wrap, n, gap = 5) {
+    // Primero intenta con getBoundingClientRect; si da 0 usa el viewport
+    let rect = wrap.getBoundingClientRect();
+    let w = rect.width, h = rect.height;
+    if (w < 10 || h < 10) {
+      // Fallback: usar tamaño del viewport menos el espacio del header/footer
+      w = window.innerWidth;
+      h = window.innerHeight - 120; // restar header y progreso
+    }
+    const avail = Math.min(w, h) - 24;
+    return Math.max(20, Math.floor((avail - gap * (n - 1)) / n));
+  },
+
+  /** Dibuja el tablero de visualización */
+  drawVizBoard(matrix) {
+    const board = document.getElementById('viz-board');
+    const wrap  = document.getElementById('viz-board-wrap');
+    const n     = CFG.size;
+    const cs    = RENDER.cellSize(wrap, n, 6);
+    board.style.gridTemplateColumns = `repeat(${n}, ${cs}px)`;
+    board.innerHTML = '';
+    matrix.forEach(colorIdx => {
+      const cell = document.createElement('div');
+      cell.className = 'viz-cell';
+      cell.style.width  = cs + 'px';
+      cell.style.height = cs + 'px';
+      cell.style.background = STATE.activeColors[colorIdx]?.hex || '#333';
+      cell.style.boxShadow  = `0 0 10px ${STATE.activeColors[colorIdx]?.hex}55`;
+      board.appendChild(cell);
+    });
+  },
+
+  /** Dibuja la paleta de colores de un jugador */
+  drawPalette(player) {
+    const el  = document.getElementById(`palette-p${player}`);
+    el.innerHTML = '';
+    STATE.activeColors.forEach((color, idx) => {
+      const sw = document.createElement('div');
+      sw.className  = 'color-swatch' + (STATE.selected[player] === idx ? ' selected' : '');
+      sw.style.background  = color.hex;
+      sw.style.boxShadow   = `0 0 8px ${color.hex}66`;
+      sw.title = color.name;
+      sw.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        GAME.selectColor(player, idx);
+      });
+      el.appendChild(sw);
+    });
+  },
+
+  /**
+   * Dibuja el tablero de reconstrucción de un jugador.
+   * Las celdas son interactivas.
+   */
+  drawReconBoard(player) {
+    const board = document.getElementById(`board-p${player}`);
+    const wrap  = document.getElementById(`panel-p${player}`);
+    const n     = CFG.size;
+    // El panel tiene header (~50px), paleta (~50px), botón confirm (~70px)
+    const headerH = 180;
+    const rect    = wrap.getBoundingClientRect();
+    const avail   = Math.min(rect.width - 16, rect.height - headerH);
+    const cs      = Math.floor((avail - 4 * (n - 1)) / n);
+    board.style.gridTemplateColumns = `repeat(${n}, ${cs}px)`;
+    board.innerHTML = '';
+    STATE.grids[player].forEach((colorIdx, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'recon-cell' + (colorIdx !== null ? ' filled' : '');
+      cell.style.width  = cs + 'px';
+      cell.style.height = cs + 'px';
+      if (colorIdx !== null) {
+        cell.style.background = STATE.activeColors[colorIdx]?.hex || '#333';
+        cell.style.boxShadow  = `0 0 8px ${STATE.activeColors[colorIdx]?.hex}55`;
+        if (CFG.allowErase) {
+          const hint = document.createElement('div');
+          hint.className = 'erase-hint';
+          hint.textContent = '✕';
+          cell.appendChild(hint);
+        }
+      }
+      cell.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        GAME.placeTile(player, i, cell);
+      });
+      board.appendChild(cell);
+    });
+    RENDER.updateFilledCount(player);
+  },
+
+  /** Actualiza el contador de casillas llenadas */
+  updateFilledCount(player) {
+    const filled = STATE.grids[player].filter(c => c !== null).length;
+    const total  = CFG.size * CFG.size;
+    document.getElementById(`filled-p${player}`).textContent = filled;
+    // Actualizar el denominador inicial
+    const el = document.getElementById(`filled-p${player}`).parentElement;
+    el.innerHTML = `Casillas: <span id="filled-p${player}">${filled}</span>/${total}`;
+  },
+};
+
+/* ══ GAME — Lógica principal ══ */
+const GAME = {
+  /** Genera la matriz aleatoria original */
+  generateMatrix() {
+    const total = CFG.size * CFG.size;
+    const n     = STATE.activeColors.length;
+    return Array.from({ length: total }, () => Math.floor(Math.random() * n));
+  },
+
+  /** Inicia una nueva partida */
+  start() {
+    TIMERS.stopAll();
+    // Preparar colores activos
+    STATE.activeColors = PALETTE.slice(0, CFG.numColors);
+    // Generar tablero original
+    STATE.original = GAME.generateMatrix();
+    // Inicializar grids de jugadores con null (vacío)
+    const total = CFG.size * CFG.size;
+    STATE.grids[1] = Array(total).fill(null);
+    STATE.grids[2] = Array(total).fill(null);
+    STATE.selected = { 1: 0, 2: 0 };
+    STATE.confirmed = { 1: false, 2: false };
+    STATE.times = { 1: 0, 2: 0, reconStart: 0 };
+    STATE.phase = 'viz';
+
+    GAME.showVizPhase();
+  },
+
+  /** Muestra la fase de visualización */
+  showVizPhase() {
+    show('screen-viz');
+    AUDIO.start();
+    const timerEl    = document.getElementById('viz-timer');
+    const progressEl = document.getElementById('viz-progress');
+    timerEl.style.display = CFG.showCountdown ? '' : 'none';
+
+    // Dibujar tablero central
+    // Usamos doble rAF + setTimeout para garantizar que el DOM haya pintado
+    // y getBoundingClientRect tenga dimensiones reales
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      setTimeout(() => {
+        RENDER.drawVizBoard(STATE.original);
+      }, 60);
+    }));
+
+    // Temporizador
+    TIMERS.startViz(
+      CFG.vizTime,
+      (remaining, total) => {
+        timerEl.textContent = remaining;
+        timerEl.classList.toggle('urgent', remaining <= 3);
+        const pct = (remaining / total) * 100;
+        progressEl.style.width = pct + '%';
+        AUDIO.countdown(remaining);
+      },
+      () => {
+        // Animación de ocultamiento
+        AUDIO.hide();
+        document.getElementById('viz-board-wrap').classList.add('hiding');
+        setTimeout(() => {
+          document.getElementById('viz-board-wrap').classList.remove('hiding');
+          GAME.showReconPhase();
+        }, 500);
+      }
+    );
+  },
+
+  /** Muestra la fase de reconstrucción */
+  showReconPhase() {
+    STATE.phase = 'viz'; // aún no está en recon
+    show('screen-reconstruct');
+    STATE.phase = 'recon';
+    STATE.times.reconStart = Date.now();
+
+    // Dibujar paletas y tableros
+    requestAnimationFrame(() => {
+      RENDER.drawPalette(1);
+      RENDER.drawPalette(2);
+      RENDER.drawReconBoard(1);
+      RENDER.drawReconBoard(2);
+    });
+
+    // Timer de reconstrucción
+    const rtEl = document.getElementById('rt-timer');
+    if (CFG.reconTime > 0) {
+      rtEl.style.display = '';
+      TIMERS.startRecon(
+        CFG.reconTime,
+        (remaining) => {
+          rtEl.textContent = remaining;
+          rtEl.classList.toggle('urgent', remaining <= 10);
+        },
+        () => {
+          // Tiempo agotado → confirmar ambos automáticamente
+          if (!STATE.confirmed[1]) GAME.confirm(1);
+          if (!STATE.confirmed[2]) GAME.confirm(2);
+        }
+      );
+    } else {
+      rtEl.style.display = 'none';
+    }
+
+    // Reset botones de confirmación
+    document.getElementById('confirm-p1').classList.remove('done');
+    document.getElementById('confirm-p2').classList.remove('done');
+    document.getElementById('confirm-status').textContent = 'Ambos jugadores deben confirmar';
+  },
+
+  /** Selecciona un color para un jugador */
+  selectColor(player, colorIdx) {
+    if (STATE.confirmed[player]) return;
+    STATE.selected[player] = colorIdx;
+    RENDER.drawPalette(player);
+  },
+
+  /**
+   * Coloca (o borra) una ficha en una celda del tablero de un jugador.
+   * Si la celda ya tiene el mismo color → borra (si está permitido).
+   */
+  placeTile(player, cellIndex, cellEl) {
+    if (STATE.confirmed[player]) return;
+    const current = STATE.grids[player][cellIndex];
+    const chosen  = STATE.selected[player];
+
+    if (current !== null && current === chosen && CFG.allowErase) {
+      // Borrar
+      STATE.grids[player][cellIndex] = null;
+      AUDIO.erase();
+    } else if (current !== null && CFG.allowErase) {
+      // Reemplazar
+      STATE.grids[player][cellIndex] = chosen;
+      AUDIO.place();
+    } else if (current === null) {
+      // Colocar
+      STATE.grids[player][cellIndex] = chosen;
+      AUDIO.place();
+    }
+
+    // Actualizar solo la celda tocada (sin re-render completo)
+    GAME.updateCell(player, cellIndex);
+    RENDER.updateFilledCount(player);
+  },
+
+  /** Actualiza visualmente una sola celda sin re-renderizar el tablero entero */
+  updateCell(player, index) {
+    const board = document.getElementById(`board-p${player}`);
+    const cells = board.querySelectorAll('.recon-cell');
+    const cell  = cells[index];
+    if (!cell) return;
+    const colorIdx = STATE.grids[player][index];
+    if (colorIdx !== null) {
+      cell.className  = 'recon-cell filled';
+      cell.style.background  = STATE.activeColors[colorIdx]?.hex || '#333';
+      cell.style.boxShadow   = `0 0 8px ${STATE.activeColors[colorIdx]?.hex}55`;
+      if (CFG.allowErase) {
+        if (!cell.querySelector('.erase-hint')) {
+          const hint = document.createElement('div');
+          hint.className = 'erase-hint';
+          hint.textContent = '✕';
+          cell.appendChild(hint);
+        }
+      }
+    } else {
+      cell.className  = 'recon-cell';
+      cell.style.background  = '';
+      cell.style.boxShadow   = '';
+      cell.innerHTML = '';
+    }
+  },
+
+  /** El jugador confirma su tablero */
+  confirm(player) {
+    if (STATE.confirmed[player]) return;
+    STATE.confirmed[player] = true;
+    STATE.times[player] = (Date.now() - STATE.times.reconStart) / 1000;
+    AUDIO.confirm();
+
+    const btn = document.getElementById(`confirm-p${player}`);
+    btn.classList.add('done');
+    btn.textContent = player === 1 ? '✓ AZUL CONFIRMADO' : '✓ ROJO CONFIRMADO';
+
+    const p1done = STATE.confirmed[1];
+    const p2done = STATE.confirmed[2];
+
+    if (p1done && p2done) {
+      document.getElementById('confirm-status').textContent = '¡Evaluando resultados...';
+      TIMERS.stopAll();
+      setTimeout(() => RESULTS.show(), 600);
+    } else {
+      const waiting = p1done ? 'ROJO' : 'AZUL';
+      document.getElementById('confirm-status').textContent = `Esperando a ${waiting}...`;
+    }
+  },
+};
+
+/* ══ RESULTS — Cálculo y presentación de resultados ══ */
+const RESULTS = {
+  /**
+   * Compara dos matrices y devuelve estadísticas.
+   * @param {Array} original
+   * @param {Array} player
+   * @returns {Object} { correct, wrong, empty, score, pct }
+   */
+  compare(original, player) {
+    let correct = 0, wrong = 0, empty = 0;
+    const total = original.length;
+    original.forEach((orig, i) => {
+      const p = player[i];
+      if (p === null)    empty++;
+      else if (p === orig) correct++;
+      else                 wrong++;
+    });
+    const score = Math.round((correct / total) * 100);
+    const pct   = `${score}%`;
+    return { correct, wrong, empty, total, score, pct };
+  },
+
+  /** Determina el ganador */
+  winner(s1, s2) {
+    if (s1.score > s2.score) return 1;
+    if (s2.score > s1.score) return 2;
+    return 0; // empate
+  },
+
+  /** Construye y muestra la pantalla de resultados */
+  show() {
+    const s1  = RESULTS.compare(STATE.original, STATE.grids[1]);
+    const s2  = RESULTS.compare(STATE.original, STATE.grids[2]);
+    const win = RESULTS.winner(s1, s2);
+
+    const layout = document.getElementById('results-layout');
+    layout.innerHTML = '';
+
+    // ── Banner ganador ──
+    const banner = document.createElement('div');
+    banner.style.width = '100%';
+    if (win === 0) {
+      banner.innerHTML = `<div class="winner-banner tie">🤝 ¡EMPATE! — ${s1.score}% vs ${s2.score}%</div>`;
+    } else {
+      const wName = win === 1 ? '🔵 AZUL' : '🔴 ROJO';
+      const wCls  = win === 1 ? 'p1' : 'p2';
+      banner.innerHTML = `<div class="winner-banner ${wCls}">🏆 ¡GANÓ ${wName}! — ${win===1?s1.score:s2.score}%</div>`;
+    }
+    layout.appendChild(banner);
+
+    // ── Tableros comparados + stats ──
+    [1, 2].forEach(p => {
+      const stats = p === 1 ? s1 : s2;
+      const col   = document.createElement('div');
+      col.className = 'result-player';
+
+      // Título
+      const titleEl = document.createElement('div');
+      titleEl.className = `result-player-title p${p}`;
+      titleEl.textContent = p === 1 ? '🔵 JUGADOR AZUL' : '🔴 JUGADOR ROJO';
+      col.appendChild(titleEl);
+
+      // Tablero de resultado
+      const boardEl = document.createElement('div');
+      boardEl.className = 'result-board';
+      const n  = CFG.size;
+      // Calcular tamaño de celda para resultados
+      const maxSz = Math.min(160, Math.floor(280 / n));
+      boardEl.style.gridTemplateColumns = `repeat(${n}, ${maxSz}px)`;
+      boardEl.style.gap = '3px';
+
+      STATE.original.forEach((orig, i) => {
+        const cell  = document.createElement('div');
+        cell.className = 'result-cell';
+        cell.style.width  = maxSz + 'px';
+        cell.style.height = maxSz + 'px';
+        // Color original
+        cell.style.background = STATE.activeColors[orig]?.hex || '#333';
+        // Overlay de resultado (animado)
+        const playerColor = STATE.grids[p][i];
+        setTimeout(() => {
+          if (playerColor === orig) cell.classList.add('correct');
+          else                      cell.classList.add('wrong');
+        }, 100 + i * 40);
+        boardEl.appendChild(cell);
+      });
+      col.appendChild(boardEl);
+
+      // Estadísticas
+      const sgEl = document.createElement('div');
+      sgEl.className = 'stats-grid';
+      const tUsed = stats.time !== undefined ? stats.time : STATE.times[p].toFixed(1);
+      sgEl.innerHTML = `
+        <div class="stat-card p${p}"><div class="stat-val">${stats.pct}</div><div class="stat-lbl">PRECISIÓN</div></div>
+        <div class="stat-card p${p}"><div class="stat-val">${stats.correct}</div><div class="stat-lbl">CORRECTAS</div></div>
+        <div class="stat-card gold"><div class="stat-val">${stats.wrong}</div><div class="stat-lbl">ERRORES</div></div>
+        <div class="stat-card gold"><div class="stat-val">${STATE.times[p].toFixed(1)}s</div><div class="stat-lbl">TIEMPO USADO</div></div>
+      `;
+      col.appendChild(sgEl);
+      layout.appendChild(col);
+    });
+
+    // Efecto de confeti si hay ganador
+    if (win > 0) { RESULTS.spawnParticles(win); AUDIO.win(); }
+    else          AUDIO.tie();
+
+    show('screen-results');
+  },
+
+  spawnParticles(winner) {
+    const cols = winner===1 ? ['#00aaff','#0066cc','#fff'] : ['#ff3355','#cc0033','#fff'];
+    for (let i=0;i<60;i++){
+      const p=document.createElement('div');
+      p.className='particle';
+      const sz=4+Math.random()*7;
+      p.style.cssText=`left:${Math.random()*100}vw;top:${-10-Math.random()*60}px;width:${sz}px;height:${sz}px;background:${cols[~~(Math.random()*cols.length)]};border-radius:${Math.random()>.5?'50%':'3px'};animation-duration:${1.5+Math.random()*2.5}s;animation-delay:${Math.random()*1}s;`;
+      document.body.appendChild(p);
+      setTimeout(()=>p.remove(),4000);
+    }
+  },
+};
+
+/* ══ AUDIO ══ */
+const AUDIO = {
+  _ac: null,
+  ctx() { return this._ac || (this._ac = new (window.AudioContext || window.webkitAudioContext)()); },
+
+  /** Tono simple */
+  tone(freq, type, dur, vol = 0.28) {
+    try {
+      const ctx = this.ctx();
+      const o   = ctx.createOscillator();
+      const g   = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+      o.start(); o.stop(ctx.currentTime + dur);
+    } catch(e) {}
+  },
+
+  /** Beep de cuenta regresiva (pitch varía) */
+  countdown(remaining) {
+    if (remaining > 3)  this.tone(440, 'sine', 0.08, 0.2);
+    else if (remaining > 0) this.tone(660, 'sine', 0.12, 0.35); // urgente
+  },
+
+  /** Sonido al ocultar el tablero */
+  hide() {
+    this.tone(330, 'sine', 0.06, 0.2);
+    setTimeout(() => this.tone(220, 'sine', 0.12, 0.15), 60);
+    setTimeout(() => this.tone(150, 'sine', 0.2,  0.12), 130);
+  },
+
+  /** Sonido al colocar una ficha */
+  place() { this.tone(523, 'sine', 0.07, 0.18); },
+
+  /** Sonido al borrar una ficha */
+  erase() { this.tone(300, 'sawtooth', 0.06, 0.12); },
+
+  /** Sonido al confirmar */
+  confirm() {
+    [523, 659, 784].forEach((f, i) => setTimeout(() => this.tone(f, 'sine', 0.15), i * 60));
+  },
+
+  /** Sonido de victoria */
+  win() {
+    [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => this.tone(f, 'sine', 0.25), i * 80));
+  },
+
+  /** Sonido de empate */
+  tie() {
+    this.tone(440, 'sine', 0.15, 0.2);
+    setTimeout(() => this.tone(440, 'sine', 0.2, 0.2), 200);
+  },
+
+  /** Toque inicial (inicio de visualización) */
+  start() {
+    this.tone(880, 'sine', 0.1, 0.3);
+    setTimeout(() => this.tone(1047, 'sine', 0.15, 0.35), 120);
+  },
+};
+
+/* ══ UI — Eventos y navegación ══ */
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// Menú
+document.getElementById('btn-play').onclick   = () => GAME.start();
+document.getElementById('btn-config').onclick  = () => show('screen-config');
+document.getElementById('cfg-back').onclick    = () => show('screen-menu');
+document.getElementById('cfg-start').onclick   = () => GAME.start();
+document.getElementById('rt-menu-btn').onclick = () => { TIMERS.stopAll(); show('screen-menu'); };
+document.getElementById('res-replay').onclick  = () => GAME.start();
+document.getElementById('res-config').onclick  = () => show('screen-config');
+
+// Confirmación
+document.getElementById('confirm-p1').addEventListener('pointerdown', e => { e.preventDefault(); GAME.confirm(1); });
+document.getElementById('confirm-p2').addEventListener('pointerdown', e => { e.preventDefault(); GAME.confirm(2); });
+
+// Config — tamaño del tablero
+document.querySelectorAll('.seg-btn[data-size]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.seg-btn[data-size]').forEach(x => x.classList.remove('sel'));
+  b.classList.add('sel');
+  CFG.size = parseInt(b.dataset.size);
+}));
+
+// Config — controles numéricos
+const numCtrls = [
+  { dec:'col-dec',  inc:'col-inc',  val:'col-val',  key:'numColors',  min:2, max:8,  step:1,   fmt:v=>v     },
+  { dec:'viz-dec',  inc:'viz-inc',  val:'viz-val',  key:'vizTime',    min:2, max:30, step:1,   fmt:v=>v     },
+  { dec:'rec-dec',  inc:'rec-inc',  val:'rec-val',  key:'reconTime',  min:0, max:120,step:5,   fmt:v=>v===0?'∞':v },
+];
+numCtrls.forEach(({dec,inc,val,key,min,max,step,fmt}) => {
+  document.getElementById(dec).onclick = () => {
+    CFG[key] = Math.max(min, CFG[key] - step);
+    document.getElementById(val).textContent = fmt(CFG[key]);
+  };
+  document.getElementById(inc).onclick = () => {
+    CFG[key] = Math.min(max, CFG[key] + step);
+    document.getElementById(val).textContent = fmt(CFG[key]);
+  };
+});
+
+// Config — toggles
+document.getElementById('tog-countdown').onchange = e => CFG.showCountdown = e.target.checked;
+document.getElementById('tog-erase').onchange      = e => CFG.allowErase    = e.target.checked;
+
+// Resize → re-renderizar si está en reconstrucción
+window.addEventListener('resize', () => {
+  if (STATE.phase === 'viz') {
+    RENDER.drawVizBoard(STATE.original);
+  } else if (STATE.phase === 'recon') {
+    RENDER.drawPalette(1); RENDER.drawPalette(2);
+    RENDER.drawReconBoard(1); RENDER.drawReconBoard(2);
+  }
+});
+</script>
+</body>
+</html>
